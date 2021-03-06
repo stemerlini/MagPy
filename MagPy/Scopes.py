@@ -1,5 +1,7 @@
+import numpy as np
+from scipy.integrate import cumtrapz
 class Scopes:
-    def __init__(self, shot, currentStart=0., path=r'//LINNA/scopes/'):
+    def __init__(self, shot, currentStart=1400., path=r'//LINNA/scopes/'):
         self.sh = shot
         self.pth = path
         self.start = float(currentStart)
@@ -42,7 +44,7 @@ class Scopes:
     def getMarx_Z(self):
         return self.getCh(11,'D2')
   
-  class Rogowski:
+class Rogowski:
     calibration = 3. #A/Vns
     attenA = 206.
     attenB = 216.
@@ -59,7 +61,7 @@ class Scopes:
         currentStartIndex = np.argmin( np.abs(t+self.backoff) )
         t_trimmed = t[currentStartIndex:]
         V_trimmed = V[currentStartIndex:]
-        intergrated = cumtrapz(V_trimmed, x=t_trimmed)
+        intergrated = cumtrapz(V_trimmed, x=t_trimmed, initial=0.)
         intergrated *= self.calibration
         intergrated *= numPosts
         return t_trimmed, intergrated
