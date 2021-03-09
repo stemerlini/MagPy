@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import cumtrapz
+from scipy.fft import rfft, rfftfreq, irfft
 class Scopes:
     def __init__(self, shot, currentStart=1400., path=r'//LINNA/scopes/'):
         self.sh = shot
@@ -13,12 +14,16 @@ class Scopes:
         timeName = voltName + 'time'
         voltName += '_' + channel
         volts = np.genfromtxt(self.pth+voltName)[0:-1]
-        time = np.genfromtxt(self.pth+timeName) - self.start
+        time = np.genfromtxt(self.pth+timeName)
         return time, volts
-    def getRogA(self):
+    def getRog1(self):
         return self.getCh(2,'C1')
-    def getRogB(self):
+    def getRog2(self):
         return self.getCh(2,'C2')
+    def getRogA(self):
+        return self.getCh(1,'D1')
+    def getRogB(self):
+        return self.getCh(1, 'D2')
     def getdIdt_G(self):
         return self.getCh(10,'A1')
     def getdIdt_H(self):
@@ -43,25 +48,49 @@ class Scopes:
         return self.getCh(11,'D1')
     def getMarx_Z(self):
         return self.getCh(11,'D2')
-  
+        
+class Channel:
+    def __init__(self, scope_object, scope_number, channel_key, attenuation):
+        self.currentStart = scope_object.start
+        self.t, self.v = scope_object.getCh(scope_number, channel_key)
+        self.v *= attenuation
+    def low_pass(self, cuttoff_s):
+        c_ns = cuttoff_s*1e-9
+        v_fft = rfft(self.v)
+        N = self.t.shape[0]
+        dt = self.t[1]-self.t[0]
+        f = rfftfreq(N, dt)
+        window = f<c_ns
+        self.v_filt = irfft(v_fft*window)
+        
 class Rogowski:
-    calibration = 3. #A/Vns
-    attenA = 206.
-    attenB = 216.
-    backoff=10. #Number of ns before current start to begin intergrating
-    def __init__(self, scope):
-        self.scope = scope
-    def getInductiveComponent(self):
-        tA, rogA = self.scope.getRogA()
-        tB, rogB = self.scope.getRogB() 
-        inductive = (rogA*self.attenA - rogB*self.attenB)*0.5
-        return tA, inductive
-    def getCurrent(self, numPosts=8):
-        t, V = self.getInductiveComponent()
-        currentStartIndex = np.argmin( np.abs(t+self.backoff) )
+    def __init__(self, channel, calibration=3.):
+        self.channel = channel
+        self.calibration = calibration
+    def getInductiveComponent(self, other_probe):
+        t = self.channel.t - self.channel.currentStart
+        v1 = self.channel.v_filt
+        v2 = other_probe.channel.v_filt       
+        inductive = (v1 - v2)*0.5
+        return t, inductive
+    def getcapacitiveComponent(self, other_probe):
+        t = self.channel.t - self.channel.currentStart
+        v1 = self.channel.v_filt
+        v2 = other_probe.channel.v_filt       
+        inductive = (v1 + v2)*0.5
+        return t, inductive
+    def getCurrent(self, other_probe=None, numPosts=8, backoff=10.):
+        if(other_probe is None):
+            t = self.channel.t - self.channel.currentStart
+            V = self.channel.v_filt
+        else:
+            t, V = self.getInductiveComponent(other_probe)
+        currentStartIndex = np.argmin( np.abs(t+backoff) )
         t_trimmed = t[currentStartIndex:]
         V_trimmed = V[currentStartIndex:]
         intergrated = cumtrapz(V_trimmed, x=t_trimmed, initial=0.)
         intergrated *= self.calibration
         intergrated *= numPosts
         return t_trimmed, intergrated
+    
+        
