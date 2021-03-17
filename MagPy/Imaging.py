@@ -11,10 +11,11 @@ class Image:
     3) pxpermm - image scale in pixels per mm'''
             
     def __init__(self, image, rotate, pxpermm):
-        self.im = sk_t.rotate(image, rotate, resize=True)
+        self.im = sk_t.rotate(image, rotate, resize=False)
         self.sc = pxpermm
         self.o = np.array([0., 0.])
         self.shape = image.shape
+        self.r = rotate
         
     def px_to_mm(self, p_px):
         '''Calculates position of point in mm, given position in px'''
@@ -40,6 +41,7 @@ class Image:
         self.o  = np.array([0., 0.])
         p_mm = self.px_to_mm(p_px)
         self.o = p_mm
+        self.o_px = p_px
         
     def get_origin(self):
         '''Returns the position of the origin in pixels'''
@@ -71,3 +73,9 @@ class Image:
         p = profile_line(self.im, src_px, dst_px, linewidth=width_px, **kwargs)
         r = np.linspace(src_mm, dst_mm, len(p))
         return r, p
+        
+    def create_im(self, im):
+        out = Image(im, 0., self.sc)
+        out.set_origin(self.o_px)
+        return out
+        
