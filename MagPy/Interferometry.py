@@ -2,26 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from lmfit.models import Model
 from copy import copy
-from MagPy.Imaging import Image
 
-'''
+
 # The following code is taken from Thomas Varnish (twv17@ic.ac.uk), it was 
 # written as part of work carried out during a UROP on MAGPIE in 2020.
 # This version was "forked" from a notebook hosted at:
 # https://github.com/jdhare/magpie_tools
-'''
 
 def gaussian_beam(x, y, x0, y0, A, B, F, c, alpha, ravel_output=False):
-    '''
-        Calculates a 2d gaussian dist. 
-        - x, y are independent vars
-        - x0, y0 are the position of the distribution's max
-        - A is width in x
-        - B is width in y
-        - F is amplitude
-        - C is offset
-        - alpha is angle between axes of ellipse and axes of image IN DEGREES
-    '''
     alpha = np.radians(alpha)
     xc, yc = x - x0, y - y0
     xr = xc * np.cos(alpha) + yc * np.sin(alpha)
@@ -31,24 +19,6 @@ def gaussian_beam(x, y, x0, y0, A, B, F, c, alpha, ravel_output=False):
         return z.ravel()
     else:
         return z
-        
-def sym_gaussian(x, y, x0, y0, sig, F, c, ravel_output=False):
-    xc, yc = x - x0, y - y0
-    z = F * np.exp(-(np.power(xc/sig, 2) + np.power(yc/sig, 2))) + c
-    if ravel_output is True:
-        return z.ravel()
-    else:
-        return z
-
-def ramp(x, y, alpha, m, c, ravel_output=False):
-    alpha = np.radians(alpha)
-    xr = x * np.cos(alpha) + y * np.sin(alpha)
-    z = m*xr + c
-    if ravel_output is True:
-        return z.ravel()
-    else:
-        return z
-    
 
 # Synthetic interferogram using cosine
 def interferogram(z, traced_both=True):
@@ -96,7 +66,7 @@ class Reconstruction:
         return self.function(**kwargs).ravel()        
     
     def fit(self, X, Y, shot, masked_shot, max_nfev=None, xtol=None, \
-    ftol=None, **kwargs):        
+    ftol=None):        
                 
         fit_kws = {}
         if xtol is not None:  # Relative error in the approximate solution.
@@ -108,8 +78,7 @@ class Reconstruction:
         self.fit_result = self.model.fit(masked_shot.ravel(), self.params, 
                                          x=X.ravel(), y=Y.ravel(), 
                                          max_nfev=int(max_nfev),
-                                         fit_kws=fit_kws,
-                                         **kwargs)
+                                         fit_kws=fit_kws)
         print(self.fit_result.fit_report())
         
         # Generate our full result from the best parameter values
@@ -117,13 +86,3 @@ class Reconstruction:
         masked_fit = mask_like(img=fitted, masked=shot)
         
         return masked_fit, fitted, self.fit_result.best_values
-
-# Thomas' code ends. 
-
-def calc_neL(sh, bk, l_nm, pxpermm):
-    re = 2.82e-15 #meters
-    l = l_nm*1e-9
-    fs = sh - bk
-    neL = fs * 2.*np.pi / re / l
-    neL /= 1e4
-    return neL
