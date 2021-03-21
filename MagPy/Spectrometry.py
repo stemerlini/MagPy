@@ -273,9 +273,13 @@ class Spectrum:
         self.b_l = bk_l
         self.n = name
         s_w = np.sum(self.s_im, 1)
+        s_w /= s_w.mean()
+        s_im_n = self.s_im / s_w[:, np.newaxis]
         b_w = np.sum(self.b_im, 1)
-        self.s_y, self.s_yerr = self.weighted_avg_and_std(self.s_im, s_w, 0)
-        self.b_y, self.b_yerr = self.weighted_avg_and_std(self.b_im, b_w, 0)
+        b_w /= b_w.mean()
+        b_im_n = self.b_im / b_w[:, np.newaxis]
+        self.s_y, self.s_yerr = self.weighted_avg_and_std(s_im_n, s_w, 0)
+        self.b_y, self.b_yerr = self.weighted_avg_and_std(b_im_n, b_w, 0)
         self.response_params = None #Call self.fit_response to populate
         
         
@@ -305,7 +309,7 @@ class Spectrum:
         y = self.b_y / self.b_y.max()
         
         p_opt, p_cov = curve_fit(self.voigt_response, self.b_l, y, \
-            p0=[approx_probe_wavelength, 1., 1.])
+            p0=[approx_probe_wavelength, 0.01, 1.])
         l0, s, A = p_opt
         self.response_params = {
             'l0': l0,
