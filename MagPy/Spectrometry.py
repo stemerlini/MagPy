@@ -261,38 +261,28 @@ class Spectrum:
         wavelength arrays for shot / background to account for the potential 
         of a different centre wavelength having been set in Solis. 
         
-        Calculates intensity and sd in data from image image using a weighted 
-        average. Weights are set using the signal strength from the profile
-        line obtained by integrating along the spectral axis of the image. 
-        There will therefore be a different set of weights used for sh/bk 
-        (whatever it means).
+       Calculates intensity and sd in data from image using a line intagrated method
+        along the spatial axis of the spectrum. Errors are calculated by simply taking 
+        the squared root of the intensity.
+
         '''
         self.s_im = sh_im
         self.b_im = bk_im
         self.s_l = sh_l
         self.b_l = bk_l
         self.n = name
-        s_w = np.sum(self.s_im, 1)
-        s_w /= s_w.mean()
-        s_im_n = self.s_im / s_w[:, np.newaxis]
-        b_w = np.sum(self.b_im, 1)
-        b_w /= b_w.mean()
-        b_im_n = self.b_im / b_w[:, np.newaxis]
-        self.s_y, self.s_yerr = self.weighted_avg_and_std(s_im_n, s_w, 0)
-        self.b_y, self.b_yerr = self.weighted_avg_and_std(b_im_n, b_w, 0)
+
+        self.s_y, self.s_yerr = self.intensity_and_std(self.s_im, 0)
+        self.b_y, self.b_yerr = self.intensity_and_std(self.b_im, 0)
         self.response_params = None #Call self.fit_response to populate
-        
-        
+    
     @staticmethod
-    def weighted_avg_and_std(array, weights, axis):
-        ''' Method ripped straight from the answer by Eric O Lebigot here:
-        stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
-        '''
-        mean = np.average(array, weights=weights, axis=axis)
-        var = np.average((array - mean)**2, weights=weights, axis=axis)
-        sd = np.sqrt(var)
+    def intensity_and_std(array, axis):
+        """ Method to calculate TS Spectrum Intensity + relative error """
+        mean = np.sum(array, axis = axis)
+        sd   = np.sqrt(mean)
         return mean, sd
-        
+
     @staticmethod
     def voigt_response(l, l0, sigma, A):
         ''' Returns a shifted voigt profile.
