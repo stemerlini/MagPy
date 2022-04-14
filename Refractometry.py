@@ -29,15 +29,15 @@ class Refractometer:
         self.o          =   np.array([0., 0.])
         self.shape      =   image.shape
         self.r          =   rotate
-    
+
     def px_to_mm(self, p_px):
         '''Calculates position of point in mm, given position in px'''
         h = self.shape[0]
         p = np.array(p_px, dtype=np.float64)
-        p *= np.array([1., -1.]) #Convert handedness 
-        p += np.array([0., h]) #Translate origin to BL corner
-        p[0] = p[0] / self.sc
-        p[1] = p[1] / self.scale_phi
+        p *= np.array([1., -1.])    #Convert handedness 
+        p += np.array([0., h])      #Translate origin to BL corner
+        p[1] = p[1] / self.sc
+        p[0] = p[0] / self.scale_phi
         p -= self.o
         return p
     
@@ -64,6 +64,13 @@ class Refractometer:
         o = np.array([0., 0.])
         o_px = self.mm_to_px(o)
         return o_px
+    
+    def get_index(self, wavelength):
+        ''' Returns the index of the row which is closest to the specified 
+        wavelength.  
+        '''
+        i = np.searchsorted(self.im[1], wavelength, side='left')
+        return i
 
 class Signal:
     def __init__(self, dark_width = 1., dark_wavelength = 540):
@@ -113,22 +120,35 @@ class Signal:
         y1 = self.off + self.num*self.sp
         return x0, x1, y0, y1
 
-    def draw_spectrum(self, refractometer, vmin = 800, vmax=6000):
+    def draw_spectrum(self, refractometer, vmin = 400, vmax=900):
         ''' Draws details of the way data from the refractometer, 
         '''
-        fig, axes = plt.subplots(1,2, figsize = (15,15), sharey=True)
+        fig, axes = plt.subplots(1,2, figsize = (15,15), sharey=False)
         ax1, ax2 = axes
-        ax1.imshow(refractometer.im , cmap='Greys', vmin=vmin, vmax=vmax)       
+
+        x0 = 0
+        x1 = refractometer.shape[0]
+        y0 = 0
+        y1 = refractometer.shape[1]
+
+        x0, y0 = refractometer.px_to_mm([x0, y0])
+        x1, y1 = refractometer.px_to_mm([x1, y1])
+        extent = [x0, x1, y1, y0]
+
+        ax1.imshow(refractometer.im, cmap='Greys', vmin=vmin, vmax=vmax)    
         profile = refractometer.im.sum(1)
         profile = 2*((profile / profile.max()) - 0.5)
-        y_ord = range( len(profile), 0, -1 )
+
+        y_ord = range(len(profile), 0, -1)
+        # y_ord = np.linspace(y0, y1, len(profile))
         ax2.plot(profile, y_ord, c='k')
-        
+
         x0, x1, y0, y1 = self.get_dark_bounds()
-        self.draw_rect(ax1,  x0, x1, y0, y1, c='b')
-        ax1.set_xlabel(r'$\lambda \; [nm]$')
-        ax1.set_ylabel(r'Position [Px]')
+        self.draw_rect(ax1, x0, x1, y0, y1, c='b')
+        ax1.set_ylabel(r'Spectrum [Px]')
+        ax1.set_xlabel(r'Position [Px]')
         ax2.set_xlabel(r'Intensity [Arb]')
+
     
     def get_image_with_dark_count_subtracted(self, refractometer):
         ''' Returns image from refractometer with the dark count subtracted.
