@@ -17,6 +17,7 @@ class Refractometer:
          3) scale_x - image scale in pixels per mm
          4) scale_ϕ - image scale in pixels per mrad
         """
+        # y axis and z axis must be rescaled based on tow different px to mm values
 
         self.im      =   sk_t.rotate(image, rotate, resize=False)
         self.sc      =   scale_x
