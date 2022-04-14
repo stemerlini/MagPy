@@ -7,13 +7,12 @@ import skimage.transform as sk_t
 from skimage.measure import profile_line
 
 class Refractometer:
-    @staticmethod
-    def __init__(self, image, rotate, scale_x, scale_ϕ):
+    def __init__(self, image, scale_x, scale_phi, rotate=None):
         """
         Initialises the refractometer class. 
         Arguments are:
          1) image - greyscale image represented as numpy array
-         2) rotation - rotation to be applied to image in degrees
+         2) rotate - rotation to be applied to image in degrees
          3) scale_x - image scale in pixels per mm
          4) scale_ϕ - image scale in pixels per mrad
         """
@@ -21,7 +20,7 @@ class Refractometer:
 
         self.im      =   sk_t.rotate(image, rotate, resize=False)
         self.sc      =   scale_x
-        self.scale_ϕ =   scale_ϕ
+        self.scale_phi =   scale_phi
         self.o       =   np.array([0., 0.])
         self.shape   =   image.shape
         self.r       =   rotate
