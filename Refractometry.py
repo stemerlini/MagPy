@@ -5,25 +5,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 import skimage.transform as sk_t
 from skimage.measure import profile_line
+from matplotlib.patches import Polygon
+
 
 class Refractometer:
-    def __init__(self, image, scale_x, scale_phi, rotate=None):
+    def __init__(self, image, scale_x, scale_phi, multiply_by=1, rotate=0):
         """
+
         Initialises the refractometer class. 
         Arguments are:
          1) image - greyscale image represented as numpy array
          2) rotate - rotation to be applied to image in degrees
          3) scale_x - image scale in pixels per mm
          4) scale_ϕ - image scale in pixels per mrad
+
         """
         # y axis and z axis must be rescaled based on tow different px to mm values
 
-        self.im      =   sk_t.rotate(image, rotate, resize=False)
-        self.sc      =   scale_x
-        self.scale_phi =   scale_phi
-        self.o       =   np.array([0., 0.])
-        self.shape   =   image.shape
-        self.r       =   rotate
+        self.im         =   sk_t.rotate(image, rotate, resize=False)
+        self.im         *=  multiply_by
+        self.sc         =   scale_x
+        self.scale_phi  =   scale_phi
+        self.o          =   np.array([0., 0.])
+        self.shape      =   image.shape
+        self.r          =   rotate
     
     def px_to_mm(self, p_px):
         '''Calculates position of point in mm, given position in px'''
@@ -31,7 +36,8 @@ class Refractometer:
         p = np.array(p_px, dtype=np.float64)
         p *= np.array([1., -1.]) #Convert handedness 
         p += np.array([0., h]) #Translate origin to BL corner
-        p /= self.sc
+        p[0] = p[0] / self.sc
+        p[1] = p[1] / self.scale_phi
         p -= self.o
         return p
     
@@ -40,7 +46,8 @@ class Refractometer:
         h = self.shape[0]
         p = np.array(p_mm)
         p += self.o
-        p *= self.sc
+        p[0] = p[0] * self.sc
+        p[1] = p[1] * self.scale_phi
         p *= np.array([1., -1.]) #Convert handedness 
         p += np.array([0., h]) #Translate origin to TR corner
         return np.array(p, dtype=np.int64)
@@ -57,17 +64,6 @@ class Refractometer:
         o = np.array([0., 0.])
         o_px = self.mm_to_px(o)
         return o_px
-    
-    def imshow(self, ax, **kwargs):
-        ''' Wraps the pbcolormesh method from pyplot to render the spectrum 
-        with wavelength on the x-axis.
-        '''
-        h,w = self.im.shape
-        X = np.tile(self.l, (h, 1))
-        y = range(h, 0, -1)
-        Y = np.tile(y, (w,1)).transpose()
-        ax.pcolormesh(X, Y, self.im, shading='nearest', **kwargs)
-        ax.invert_yaxis()
 
 class Signal:
     def __init__(self, dark_width = 1., dark_wavelength = 540):
@@ -122,7 +118,7 @@ class Signal:
         '''
         fig, axes = plt.subplots(1,2, figsize = (15,15), sharey=True)
         ax1, ax2 = axes
-        refractometer.imshow(ax1, cmap='Greys', vmin=vmin, vmax=vmax)       
+        ax1.imshow(refractometer.im , cmap='Greys', vmin=vmin, vmax=vmax)       
         profile = refractometer.im.sum(1)
         profile = 2*((profile / profile.max()) - 0.5)
         y_ord = range( len(profile), 0, -1 )
