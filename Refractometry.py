@@ -75,7 +75,7 @@ class Refractometer:
         return i
 
 class Signal:
-    def __init__(self, num = 10, spacing=19, offset=8, disc_rows=5., l0=530., l1=535., dark_wavelength = 540., dark_width= 1.):
+    def __init__(self, num = 28, spacing=100, offset=0, disc_rows=0, l0=500., l1=2000., dark_wavelength = 0., dark_width= 100.):
         
         ''' Initialises the Signal class. Description of arguments:
 
@@ -250,11 +250,11 @@ class Signal:
         axCenter.set_xlabel(r'Position [Px]')
         axCenter.set_xlim([0,self.sh.shape[1]])
         axCenter.set_ylim([self.sh.shape[0],0])
-        # ax2.set_xlabel(r'Intensity [Arb]')
+        axvert.set_xlabel(r'Intensity [Arb]')
 
     def split(self, sh_refractometer, bk_refractometer):
 
-        ''' Splits images from the 2 spectrometer objects into strips for each
+        ''' Splits images from the  objects into strips for each
         fiber, subtracts dark count and initialises the fiber objects, which 
         are stored as a dict which is a member var of self.
         '''
@@ -280,3 +280,27 @@ class Signal:
             f = Spectrum(sh_im, bk_im, sl, bl, n)
             self.fibers[n]=f
             i += 1
+
+class Spectrum:
+    def __init__(self, sh_im, bk_im, sh_l, bk_l, name):
+
+        ''' Initialises a fiber class. sh_im/bk_im are a (2D) slice of the 
+        image from the CCD corresponding to an individual fiber. l is a (1D)
+        slice of the wavelength array which aligns with im. There are separate 
+        wavelength arrays for shot / background to account for the potential 
+        of a different centre wavelength having been set in Solis. 
+        
+        Calculates intensity and sd in data from image using a line intagrated method
+        along the spatial axis of the spectrum. Errors are calculated by simply taking 
+        the squared root of the intensity.
+
+        '''
+        self.s_im = sh_im
+        self.b_im = bk_im
+        self.s_l = sh_l
+        self.b_l = bk_l
+        self.n = name
+
+        self.s_y, self.s_yerr = self.intensity_and_std(self.s_im, 0)
+        self.b_y, self.b_yerr = self.intensity_and_std(self.b_im, 0)
+        self.response_params = None #Call self.fit_response to populate
