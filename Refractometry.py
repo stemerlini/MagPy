@@ -254,8 +254,8 @@ class Signal:
 
     def split(self, sh_refractometer, bk_refractometer):
 
-        ''' Splits images from the  objects into strips for each
-        fiber, subtracts dark count and initialises the fiber objects, which 
+        ''' Splits images from the objects into strips for each
+        segment, subtracts dark count and initialises the segment objects, which 
         are stored as a dict which is a member var of self.
         '''
 
@@ -269,16 +269,16 @@ class Signal:
         sim = np.flip(sim, 0) # See Spectrometer.imshow 
         bim = np.flip(bim, 0) # for explanation of this flip
         
-        self.fibers = {}
+        self.segments = {}
         i = 0
         while(i<len(y0)):
-            n = self.get_fiber_name(i)
+            n = str(i)
             sh_im = sim[y0[i]:y1[i], sx0:sx1]
             bk_im = bim[y0[i]:y1[i], bx0:bx1]
             sl = sh_refractometer.l[sx0:sx1]
             bl = bk_refractometer.l[bx0:bx1]
             f = Spectrum(sh_im, bk_im, sl, bl, n)
-            self.fibers[n]=f
+            self.segments[n]=f
             i += 1
 
 class Spectrum:
