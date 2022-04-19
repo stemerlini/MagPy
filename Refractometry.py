@@ -3,9 +3,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import skimage.transform as sk_t
 from skimage.measure import profile_line
 from matplotlib.patches import Polygon
+
 
 
 class Refractometer:
@@ -73,7 +75,25 @@ class Refractometer:
         return i
 
 class Signal:
-    def __init__(self, dark_width = 1., dark_wavelength = 540):
+    def __init__(self, num = 10, spacing=19, offset=8, disc_rows=5., l0=530., l1=535., dark_wavelength = 540., dark_width= 1.):
+        
+        ''' Initialises the Signal class. Description of arguments:
+
+            1) spacing          -   spacing [in px] between segments
+            2) offset           -   spatial coordinate [in px] of the 1st segment
+            3) disc rows        -   number of px to crop from the top & bottom edge of each segment
+            4) l0               -   leftmost region of spectra to carry forwards into further analysis
+            5) l1               -   rightmost region of spectra to carry forwards into further analysis
+            6) dark_wavelength  -   leftmost edge of vertical strip of pixels used to calculate dark count
+            7) dark_width       -   width of the vertical strip of pixels used to calculate dark count
+        '''
+
+        self.num = num
+        self.sp = spacing
+        self.off = offset
+        self.dis = disc_rows
+        self.l0 = l0
+        self.l1 = l1
         self.dl = dark_wavelength
         self.dw = dark_width
 
@@ -109,7 +129,26 @@ class Signal:
         )
         ax.add_patch(rect1)
         ax.add_patch(rect2)
-    
+
+    def get_fiber_y_bounds(self):
+        ''' Calculate the upper and lower y-coordinates of each fiber in 
+        the spectrum. Returns 2 arguments:
+        1) y0 - list of the uppermost ordinates of each fiber
+        2) y1 - the lowermost ordinates of each fiver
+        '''
+        y0s = []
+        y1s = []
+        for i in range(self.num):
+            y0 = self.off + self.dis + i*self.sp
+            y1 = self.off - self.dis + (i+1)*self.sp
+            
+            y0 = int( round(y0) )
+            y1 = int( round(y1) )
+            
+            y0s.append(y0)
+            y1s.append(y1)
+        return y0s, y1s
+
     def get_dark_bounds(self):
         ''' Get the bounds of the strip which is used to calculate
         dark count.
@@ -119,47 +158,125 @@ class Signal:
         y0 = self.off
         y1 = self.off + self.num*self.sp
         return x0, x1, y0, y1
-
-    def draw_spectrum(self, refractometer, vmin = 400, vmax=900):
-        ''' Draws details of the way data from the refractometer, 
-        '''
-        fig, axes = plt.subplots(1,2, figsize = (15,15), sharey=False)
-        ax1, ax2 = axes
-
-        x0 = 0
-        x1 = refractometer.shape[0]
-        y0 = 0
-        y1 = refractometer.shape[1]
-
-        x0, y0 = refractometer.px_to_mm([x0, y0])
-        x1, y1 = refractometer.px_to_mm([x1, y1])
-        extent = [x0, x1, y1, y0]
-
-        ax1.imshow(refractometer.im, cmap='Greys', vmin=vmin, vmax=vmax)    
-        profile = refractometer.im.sum(1)
-        profile = 2*((profile / profile.max()) - 0.5)
-
-        y_ord = range(len(profile), 0, -1)
-        # y_ord = np.linspace(y0, y1, len(profile))
-        ax2.plot(profile, y_ord, c='k')
-
-        x0, x1, y0, y1 = self.get_dark_bounds()
-        self.draw_rect(ax1, x0, x1, y0, y1, c='b')
-        ax1.set_ylabel(r'Spectrum [Px]')
-        ax1.set_xlabel(r'Position [Px]')
-        ax2.set_xlabel(r'Intensity [Arb]')
-
     
-    def get_image_with_dark_count_subtracted(self, refractometer):
-        ''' Returns image from refractometer with the dark count subtracted.
+    def get_image_with_dark_count_subtracted(self, spectrometer):
+        ''' Returns image from spectrometer with the dark count subtracted.
         Dark count is allowed to vary along the spatial axis and is calculated 
         from the spectral average of the region bounded by self.dl and 
-        self.dl+self.dw.
+        self.dl+self.dw. Depending on the spectral region taken to obtain 
+        background count, this might also contain a contribution from plasma 
+        self emission. Provided there's not much spectral variation in self 
+        emission, this is okay -- but perhaps this method should be renamed?
         ''' 
-        x0 = refractometer.get_index(self.dl)
-        x1 = refractometer.get_index(self.dl + self.dw)
-        dark_reg = refractometer.im[:, x0:x1]
+        x0 = spectrometer.get_index(self.dl)
+        x1 = spectrometer.get_index(self.dl + self.dw)
+        dark_reg = spectrometer.im[:, x0:x1]
         dark_cnt = np.average(dark_reg, axis=1)
-        sub_im = refractometer.im.transpose() - dark_cnt.transpose()
+        sub_im = spectrometer.im.transpose() - dark_cnt.transpose()
         sub_im = np.clip(sub_im, a_min=0., a_max=None) # Set floor of array to
-        return sub_im.transpose()
+        return sub_im.transpose()                      # 0 to avoid -ive signal 
+
+    
+    def draw_spectrum(self, sh, bk, vmin = 400, vmax=900):
+        ''' Draws details of the way data from the refractometer, 
+        '''
+
+        self.sh = sh
+        self.bk = bk
+
+        # fig, axes = plt.subplots(1,2, figsize = (10,10), sharey=True)
+        # ax1, ax2 = axes
+
+        fig, axCenter = plt.subplots(figsize=(12, 12))
+        fig.subplots_adjust(.05,.1,.95,.95)
+
+        divider = make_axes_locatable(axCenter)
+        axvert = divider.append_axes('right', size='30%', pad=0.5)
+        axhoriz = divider.append_axes('top', size='20%', pad=0.25)
+
+        axCenter.imshow(self.sh.im, cmap='Greys',  vmin=vmin, vmax=vmax)   
+        
+        # Sum vertically
+        profile_vert = self.sh.im.sum(0)
+        profile_vert = (profile_vert - profile_vert.min() ) / (profile_vert.max() - profile_vert.min())
+        response_vert = self.bk.im.sum(0)
+        response_vert = (response_vert - response_vert.min() ) / (response_vert.max() - response_vert.min())
+        xvert = range(0, len(profile_vert), 1)
+        
+        axhoriz.plot(xvert, profile_vert, c = 'k')
+        axhoriz.plot(xvert, response_vert, c = 'green')
+
+        axhoriz.set_ylim([0,1])
+        axhoriz.set_xlim([0,self.sh.shape[1]])
+        
+        # ax2.plot(profile, y_ord, c='k')
+        # ax2.plot(response, y_ord, c='green')
+
+        # Sum horizontally
+        profile_hor = self.sh.im.sum(1)
+        profile_hor = (profile_hor - profile_hor.min() ) / (profile_hor.max() - profile_hor.min())
+        response_hor = self.bk.im.sum(1)
+        response_hor = (response_hor - response_hor.min() ) / (response_hor.max() - response_hor.min())
+        yhoriz = range(len(profile_hor), 0 , -1)
+
+        axvert.plot(profile_hor, yhoriz, c = 'k')
+        axvert.plot(response_hor, yhoriz, c = 'green')
+
+        axvert.set_xlim([0,1])
+        axvert.set_ylim([self.sh.shape[0], 0])
+
+        axhoriz.margins(x=0)
+        axvert.margins(y=0)
+
+        # -------------------------------------------------
+
+        y0, y1 = self.get_fiber_y_bounds()
+        y0 = np.array(y0)
+        y1 = np.array(y1)
+        Y = (y0+y1)/2
+        for y in Y:
+            axhoriz.axvline(y, 0, 1 , c='r', ls='--', lw=1)
+
+        i = 0
+        while(i<len(y0)):
+            self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
+            axhoriz.text(Y[i], 0.8, str(i), c='r')
+            i += 1
+        
+        x0, x1, y0, y1 = self.get_dark_bounds()
+        self.draw_rect(axCenter, y0, y1, x0, x1, c='b')
+
+        axCenter.set_ylabel(r'Spectrum [Px]')
+        axCenter.set_xlabel(r'Position [Px]')
+        axCenter.set_xlim([0,self.sh.shape[1]])
+        axCenter.set_ylim([self.sh.shape[0],0])
+        # ax2.set_xlabel(r'Intensity [Arb]')
+
+    def split(self, sh_refractometer, bk_refractometer):
+
+        ''' Splits images from the 2 spectrometer objects into strips for each
+        fiber, subtracts dark count and initialises the fiber objects, which 
+        are stored as a dict which is a member var of self.
+        '''
+
+        y0, y1 = self.get_fiber_y_bounds()
+        sx0 = sh_refractometer.get_index(self.l0)
+        sx1 = sh_refractometer.get_index(self.l1)
+        bx0 = bk_refractometer.get_index(self.l0)
+        bx1 = bk_refractometer.get_index(self.l1)
+        sim = self.get_image_with_dark_count_subtracted(sh_refractometer)
+        bim = self.get_image_with_dark_count_subtracted(bk_refractometer)
+        sim = np.flip(sim, 0) # See Spectrometer.imshow 
+        bim = np.flip(bim, 0) # for explanation of this flip
+        
+        self.fibers = {}
+        i = 0
+        while(i<len(y0)):
+            n = self.get_fiber_name(i)
+            sh_im = sim[y0[i]:y1[i], sx0:sx1]
+            bk_im = bim[y0[i]:y1[i], bx0:bx1]
+            sl = sh_refractometer.l[sx0:sx1]
+            bl = bk_refractometer.l[bx0:bx1]
+            f = Spectrum(sh_im, bk_im, sl, bl, n)
+            self.fibers[n]=f
+            i += 1
