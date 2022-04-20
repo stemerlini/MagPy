@@ -66,13 +66,6 @@ class Refractometer:
         o = np.array([0., 0.])
         o_px = self.mm_to_px(o)
         return o_px
-    
-    def get_index(self, wavelength):
-        ''' Returns the index of the row which is closest to the specified 
-        wavelength.  
-        '''
-        i = np.searchsorted(self.im[1], wavelength, side='left')
-        return i
 
 class Signal:
     def __init__(self, num = 28, spacing=100, offset=0, disc_rows=0, l0=500., l1=2000., dark_wavelength = 0., dark_width= 100.):
@@ -259,30 +252,30 @@ class Signal:
         are stored as a dict which is a member var of self.
         '''
 
-        y0, y1 = self.get_fiber_y_bounds()
-        sx0 = sh_refractometer.get_index(self.l0)
-        sx1 = sh_refractometer.get_index(self.l1)
-        bx0 = bk_refractometer.get_index(self.l0)
-        bx1 = bk_refractometer.get_index(self.l1)
-        sim = self.get_image_with_dark_count_subtracted(sh_refractometer)
-        bim = self.get_image_with_dark_count_subtracted(bk_refractometer)
-        sim = np.flip(sim, 0) # See Spectrometer.imshow 
-        bim = np.flip(bim, 0) # for explanation of this flip
+        y0, y1  =    self.get_fiber_y_bounds()
+        sx0     =    self.l0
+        sx1     =    self.l1
+        bx0     =    self.l0
+        bx1     =    self.l1
+        sim     =    sh_refractometer.im
+        bim     =    bk_refractometer.im
+        # sim = self.get_image_with_dark_count_subtracted(sh_refractometer)
+        # bim = self.get_image_with_dark_count_subtracted(bk_refractometer)
+        # sim = np.flip(sim, 0) # See Spectrometer.imshow 
+        # bim = np.flip(bim, 0) # for explanation of this flip
         
         self.segments = {}
         i = 0
         while(i<len(y0)):
             n = str(i)
-            sh_im = sim[y0[i]:y1[i], sx0:sx1]
-            bk_im = bim[y0[i]:y1[i], bx0:bx1]
-            sl = sh_refractometer.l[sx0:sx1]
-            bl = bk_refractometer.l[bx0:bx1]
-            f = Spectrum(sh_im, bk_im, sl, bl, n)
+            sh_im = sim[sx0:sx1, y0[i]:y1[i]]
+            bk_im = bim[bx0:bx1, y0[i]:y1[i]]
+            f = Spectrum(sh_im, bk_im, n)
             self.segments[n]=f
             i += 1
 
 class Spectrum:
-    def __init__(self, sh_im, bk_im, sh_l, bk_l, name):
+    def __init__(self, sh_im, bk_im, name):
 
         ''' Initialises a fiber class. sh_im/bk_im are a (2D) slice of the 
         image from the CCD corresponding to an individual fiber. l is a (1D)
@@ -297,10 +290,16 @@ class Spectrum:
         '''
         self.s_im = sh_im
         self.b_im = bk_im
-        self.s_l = sh_l
-        self.b_l = bk_l
         self.n = name
 
-        self.s_y, self.s_yerr = self.intensity_and_std(self.s_im, 0)
-        self.b_y, self.b_yerr = self.intensity_and_std(self.b_im, 0)
+        self.s_y, self.s_yerr = self.intensity_and_std(self.s_im, 1)
+        self.b_y, self.b_yerr = self.intensity_and_std(self.b_im, 1)
         self.response_params = None #Call self.fit_response to populate
+
+    @staticmethod
+    def intensity_and_std(array, axis):
+        """ Method to calculate TS Spectrum Intensity + relative error """
+        mean = np.sum(array, axis = axis)
+        mean_norm = (mean - mean.min() ) / (mean.max() - mean.min())
+        sd   = np.sqrt(mean_norm)
+        return mean_norm, sd
