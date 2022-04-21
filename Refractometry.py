@@ -9,6 +9,8 @@ from skimage.measure import profile_line
 from matplotlib.patches import Polygon
 from scipy.optimize import curve_fit
 from scipy.special import voigt_profile
+from lmfit.models import GaussianModel, ConstantModel
+
 
 
 
@@ -305,6 +307,8 @@ class Spectrum:
         self.s_y, self.s_yerr = self.intensity_and_std(self.s_im, 1)
         self.b_y, self.b_yerr = self.intensity_and_std(self.b_im, 1)
         self.response_params = None #Call self.fit_response to populate
+        self.spectrum_params = None #Call self.fit_spectrum to populate
+
 
     @staticmethod
     def intensity_and_std(array, axis):
@@ -349,3 +353,15 @@ class Spectrum:
         A = self.response_params['amp']
         R = self.voigt_response(l, l0, s, A)
         return R
+    
+    def fit_spectrum(self, approx_probe_angle=0.):
+        ''' Fit a Gaussian profile to the spectrum.
+        '''
+        mod=GaussianModel()+ConstantModel()
+        mod.make_params()
+        mod.set_param_hint('mean', value = approx_probe_angle)
+        mod.set_param_hint('sigma', value=0.01)
+        mod.set_param_hint('amplitude', value=1)
+        y = self.s_y / self.s_y.max()
+        res=mod.fit(y, x=self.s_l, nan_policy='omit')
+        return res.best_fit
