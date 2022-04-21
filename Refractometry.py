@@ -7,6 +7,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import skimage.transform as sk_t
 from skimage.measure import profile_line
 from matplotlib.patches import Polygon
+from scipy.optimize import curve_fit
+from scipy.special import voigt_profile
 
 
 
@@ -272,12 +274,16 @@ class Signal:
             n = str(i)
             sh_im = sim[sx0:sx1, y0[i]:y1[i]]
             bk_im = bim[bx0:bx1, y0[i]:y1[i]]
-            f = Spectrum(sh_im, bk_im, n)
+            sh_l  = np.linspace(sx0, sx1, len(sh_im[:,1]))
+            bk_l  = np.linspace(bx0, bx1, len(bk_im[:,1]))
+            sh_l  = (sh_l - (sh_l.max() + sh_l.min()) / 2) / sh_refractometer.scale_phi
+            bk_l  = (bk_l - (bk_l.max() + bk_l.min()) / 2) / bk_refractometer.scale_phi
+            f     = Spectrum(sh_im, bk_im, sh_l, bk_l, n)
             self.segments[n]=f
             i += 1
 
 class Spectrum:
-    def __init__(self, sh_im, bk_im, name):
+    def __init__(self, sh_im, bk_im, s_l, b_l, name):
 
         ''' Initialises a fiber class. sh_im/bk_im are a (2D) slice of the 
         image from the CCD corresponding to an individual fiber. l is a (1D)
@@ -290,9 +296,11 @@ class Spectrum:
         the squared root of the intensity.
 
         '''
-        self.s_im = sh_im
-        self.b_im = bk_im
-        self.n = name
+        self.s_im   =   sh_im
+        self.b_im   =   bk_im
+        self.s_l    =   s_l
+        self.b_l    =   b_l
+        self.n      =   name
 
         self.s_y, self.s_yerr = self.intensity_and_std(self.s_im, 1)
         self.b_y, self.b_yerr = self.intensity_and_std(self.b_im, 1)
@@ -305,3 +313,39 @@ class Spectrum:
         mean_norm = (mean - mean.min() ) / (mean.max() - mean.min())
         sd   = np.sqrt(mean_norm)
         return mean_norm, sd
+
+    @staticmethod
+    def voigt_response(l, l0, sigma, A):
+        ''' Returns a shifted voigt profile.
+        '''
+        dl = l-l0
+        gamma=sigma
+        y = voigt_profile(dl, sigma, gamma)
+        y /= y.max()
+        return y*A 
+    
+    def fit_response(self, approx_probe_angle=0.):
+        ''' Fit a voigt profile to the background spectrum.
+        '''
+        y = self.b_y / self.b_y.max()
+        
+        p_opt, p_cov = curve_fit(self.voigt_response, self.b_l, y, \
+            p0=[approx_probe_angle, 1., 0.01])
+        l0, s, A = p_opt
+        self.response_params = {
+            'l0': l0,
+            'sigma': s,
+            'gamma': s,
+            'amp': A,
+        }
+
+    def get_response(self, l):
+        ''' Returns an array representing the fitted response function, centred 
+        on lambda_0. Takes one input, an array of wavelengths in nm.
+        '''
+        l0 =  self.response_params['l0']
+        s = self.response_params['sigma']
+        g = self.response_params['gamma']
+        A = self.response_params['amp']
+        R = self.voigt_response(l, l0, s, A)
+        return R
