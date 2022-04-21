@@ -38,8 +38,8 @@ class Refractometer:
         p = np.array(p_px, dtype=np.float64)
         p *= np.array([1., -1.])    #Convert handedness 
         p += np.array([0., h])      #Translate origin to BL corner
-        p[1] = p[1] / self.sc
-        p[0] = p[0] / self.scale_phi
+        p[0] = p[0] / self.sc
+        p[1] = p[1] / self.scale_phi
         p -= self.o
         return p
     
@@ -161,15 +161,14 @@ class Signal:
         self emission. Provided there's not much spectral variation in self 
         emission, this is okay -- but perhaps this method should be renamed?
         ''' 
-        x0 = spectrometer.get_index(self.dl)
-        x1 = spectrometer.get_index(self.dl + self.dw)
+        x0 = self.dl
+        x1 = self.dl + self.dw
         dark_reg = spectrometer.im[:, x0:x1]
         dark_cnt = np.average(dark_reg, axis=1)
         sub_im = spectrometer.im.transpose() - dark_cnt.transpose()
         sub_im = np.clip(sub_im, a_min=0., a_max=None) # Set floor of array to
         return sub_im.transpose()                      # 0 to avoid -ive signal 
 
-    
     def draw_spectrum(self, sh, bk, vmin = 400, vmax=900):
         ''' Draws details of the way data from the refractometer, 
         '''
@@ -245,7 +244,7 @@ class Signal:
         axCenter.set_ylim([self.sh.shape[0],0])
         axvert.set_xlabel(r'Intensity [Arb]')
 
-    def split(self, sh_refractometer, bk_refractometer):
+    def split(self, sh_refractometer, bk_refractometer, darkCount = False):
 
         ''' Splits images from the objects into strips for each
         segment, subtracts dark count and initialises the segment objects, which 
@@ -257,10 +256,13 @@ class Signal:
         sx1     =    self.l1
         bx0     =    self.l0
         bx1     =    self.l1
-        sim     =    sh_refractometer.im
-        bim     =    bk_refractometer.im
-        # sim = self.get_image_with_dark_count_subtracted(sh_refractometer)
-        # bim = self.get_image_with_dark_count_subtracted(bk_refractometer)
+        if darkCount:
+            sim     =    self.get_image_with_dark_count_subtracted(sh_refractometer)
+            bim     =    self.get_image_with_dark_count_subtracted(bk_refractometer)
+        else:
+            sim     =    sh_refractometer.im
+            bim     =    bk_refractometer.im
+
         # sim = np.flip(sim, 0) # See Spectrometer.imshow 
         # bim = np.flip(bim, 0) # for explanation of this flip
         
