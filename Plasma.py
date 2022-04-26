@@ -23,20 +23,20 @@ class plasma:
             B:      Magnetic Field [Tesla]
 
         '''
-        self.A              =   A                                                                       # Atomic mass weight                                [gr/mol]
-        self.ne             =   ne                                                                      # Electron Density [cm^-3]
-        self.Te             =   Te                                                                      # Electron Temperature                               [Kg/m3]
-        self.Ti             =   Ti                                                                      # Ion Temperature                                   [eV]
-        self.V              =   V                                                                       # Bulk Velocity                                     [cm/s]
-        self.B              =   B                                                                       # Magnetic Field                                    [Tesla T]
+        self.A              =   A                                           # Atomic mass weight                                [gr/mol]
+        self.ne             =   ne                                          # Electron Density [cm^-3]
+        self.Te             =   Te                                          # Electron Temperature                               [Kg/m3]
+        self.Ti             =   Ti                                          # Ion Temperature                                   [eV]
+        self.V              =   V                                           # Bulk Velocity                                     [cm/s]
+        self.B              =   B                                           # Magnetic Field                                    [Tesla T]
 
         # Estimate Ionisation Charge State - Z - from Tabled Values
         Z_mod               =   self.ZTe()
-        self.Z              =   Z_mod(self.Te)                                                          # Charge State for a given Te
+        self.Z              =   Z_mod(self.Te)                                         # Charge State for a given Te
         # Density
-        self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z                             # Mass Density 
+        self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z            # Mass Density 
         # Ion density
-        self.ni             =   self.ne/self.Z                                                          # Ion Density                                        [cm^-3]
+        self.ni             =   self.ne/self.Z                                         # Ion Density                                        [cm^-3]
         # Calculate Coulomb Log
         self.col_log_ei     =   self.CoulombLog()
         # Calculate Plasma Parameters
@@ -216,8 +216,7 @@ class plasma:
             - l: Characteristic Spatial Length
         [CGS]
         """
-        self.l          =    l                                                     # Length             [cm]
-
+        self.l          =    l                                                       # Length [cm]
         self.HallNumber =    self.delta_i / (self.l*1e-2)                            # Hall Number     
         self.Re         =    self.l*self.V / self.visc                               # Reynolds Number                                 
         self.Re_m       =    self.l*self.V / self.Dm                                 # Magnetic Reynolds Number        
@@ -225,7 +224,7 @@ class plasma:
         self.beta_ram   =    self.P_ram / self.P_B                                   # Dynamic Beta
         self.M_S        =    self.V*1e-2 / self.V_S                                  # Sonic Mach Number
         self.M_A        =    self.V*1e-2 / self.V_A                                  # Alvenic Mach Number
-        self.M_SA       =    self.V*1e-2 / np.sqrt(self.V_A**2 + self.V_S**2)                  # Magnitosonic Mach Number
+        self.M_SA       =    self.V*1e-2 / np.sqrt(self.V_A**2 + self.V_S**2)        # Magnitosonic Mach Number
 
     def printParams(self):
 
