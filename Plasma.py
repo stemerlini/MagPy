@@ -31,13 +31,22 @@ class Plasma:
 
         # Estimate Ionisation Charge State - Z - from Tabled Values
         Z_mod               =   IaeaTable(self.A)
-        self.Z              =   Z_mod.model(self.Te, self.ne)               # Charge State for a given Te
+        self.Z              =   Z_mod.model(self.Te, self.ne)                          # Charge State for a given Te
         # Density
         self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z            # Mass Density 
         # Ion density
         self.ni             =   self.ne/self.Z                                         # Ion Density                                        [cm^-3]
         # Calculate Coulomb Log
-        self.col_log_ei     =   self.CoulombLog()
+        self.CoulombLog()
+
+        # Parameters
+        self.speed()
+        self.frequency()
+        self.lengthScale()
+        self.viscosity()
+        self.resistivity()
+        self.pressure()
+        self.dimensionless()
 
     def CoulombLog(self):
         """
@@ -100,7 +109,7 @@ class Plasma:
         self.nu_ei      =    2.91e-6*self.Z*self.ne*self.col_log_ei*self.Te**-1.5                       # Collision Frequency: Electrons - Ions           [1/s] ref. NRL FUNDAMENTAL PLASMA PARAMETERS chapter
         self.nu_ie      =    4.80e-8*self.Z**4*self.A**-0.5*self.ni*self.col_log_ei*self.Ti**-1.5       # Collision Frequency: Ions - Electrons           [1/s]
 
-    def lenghtScale(self):
+    def lengthScale(self):
         """
         Method to calculate main lenght scales
 
@@ -111,6 +120,7 @@ class Plasma:
         e               =      cons.e                                                                   # Elemental Charge       [C]
         epsilon_0       =      cons.epsilon_0                                                           # Vacuum Permittivity    [F m^-1]
         kb              =      cons.k                                                                   # Boltzmann Constant     [J K^-1]
+        c               =      cons.c                                                                   # Light Speed            [m s^-1]
 
         T_e             =    self.Te*e/kb                                                               # electron Temperature, kelvin                    [K]
         T_i             =    self.Ti*e/kb                                                               # ion Temperature, kelvin                         [K]
@@ -176,6 +186,7 @@ class Plasma:
 
         kb              =    cons.k                                   # Boltzmann Constant     [J K^-1]
         mu_0            =    cons.mu_0                                # Vacuum Permeability    [N A^-2]
+        m_i             =    self.A*cons.m_u                          # Ion Mass               [Kg]
         e               =    cons.e                                   # Elemental Charge       [C]
 
         n_e             =    self.ne * 1e6                            # Electron Density       [m^-3]
