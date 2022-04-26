@@ -3,23 +3,22 @@
 import numpy as np
 from scipy.interpolate import CubicSpline, interp1d
 import scipy.constants as cons
+from MagPy.Ionisation import IaeaTable
 
-class plasma:
+class Plasma:
     def __init__(self, A, ne, Te, Ti, V, B):
         '''
         Initialise a Plasma Object given the following parameters:
         Args:
             example:
             ---------------------------------------------------------------------------------------
-            al_flow = {'A':27, 'Te': Te, 'Ti': Ti, 'V':4e6, 'L': 1, 'B': 5}
+            al_flow = {'A':27, 'ne':1e18, 'Te': Te, 'Ti': Ti, 'V':4e6, 'B': 5}
             al=Plasma(**al_flow)
             ---------------------------------------------------------------------------------------
             A:      ion mass in nucleon masses
             ne:     Electron Density in cm^-3
             Te      electron temperature in eV
             V:      velocity in cm/s
-            L:      length scale in cm.
-            Zsrc:   Charge State Model source, 'exp' or 'FLY'
             B:      Magnetic Field [Tesla]
 
         '''
@@ -31,33 +30,14 @@ class plasma:
         self.B              =   B                                           # Magnetic Field                                    [Tesla T]
 
         # Estimate Ionisation Charge State - Z - from Tabled Values
-        Z_mod               =   self.ZTe()
-        self.Z              =   Z_mod(self.Te)                                         # Charge State for a given Te
+        Z_mod               =   IaeaTable(self.A)
+        self.Z              =   Z_mod.model(self.Te, self.ne)               # Charge State for a given Te
         # Density
         self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z            # Mass Density 
         # Ion density
         self.ni             =   self.ne/self.Z                                         # Ion Density                                        [cm^-3]
         # Calculate Coulomb Log
         self.col_log_ei     =   self.CoulombLog()
-        # Calculate Plasma Parameters
-        self.params()
-
-    def ZTe(self):
-        """
-        Method to return ZTe relation from FLY tabled values
-
-        Requires:
-        - Atomic Mass weight, A
-        - .zvd tabled files
-
-        return: function Z = z_mod(Te)
-        """
-        A        =  self.A
-        root     =  './iaea_ionisation_tables/' 
-        filepath =  root + self.A + '.zvd'
-        T_e, Z =  np.genfromtxt(filepath, delimiter = '  ', usecols = [0,1], unpack = True)
-        Z_mod = interp1d(T_e, Z)
-        return Z_mod
 
     def CoulombLog(self):
         """
