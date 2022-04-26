@@ -135,6 +135,9 @@ class Plasma:
             self.rho_e  =    self.V_te/self.om_ce                                                       # Electron Larmor Radius                          [m]
             self.rho_e  *=  1e2
             self.rho_i  *=  1e2
+        else: 
+            self.rho_e  = np.nan
+            self.rho_i  = np.nan
         
         self.mfp_e      =    self.V_te/self.nu_ei                                                       # electron mean-free-path                         [m]
         self.mfp_i      =    self.V_ti/self.nu_ie                                                       # Ion mean-free-path
@@ -211,13 +214,20 @@ class Plasma:
         self.HallNumber =    self.delta_i / (self.l*1e-2)                            # Hall Number     
         self.Re         =    self.l*self.V / self.visc                               # Reynolds Number                                 
         self.Re_m       =    self.l*self.V / self.Dm                                 # Magnetic Reynolds Number        
-        self.beta_th    =    self.P_th / self.P_B                                    # Thermal Beta
-        self.beta_ram   =    self.P_ram / self.P_B                                   # Dynamic Beta
+        
+        if self.B != 0:
+            self.beta_th    =    self.P_th / self.P_B                                    # Thermal Beta
+            self.beta_ram   =    self.P_ram / self.P_B                                   # Dynamic Beta
+            self.M_A        =    self.V*1e-2 / self.V_A                                  # Alvenic Mach Number
+        else:
+            self.M_A        =   np.nan
+            self.beta_ram   =   np.nan
+            self.beta_th    =   np.nan
+
         self.M_S        =    self.V*1e-2 / self.V_S                                  # Sonic Mach Number
-        self.M_A        =    self.V*1e-2 / self.V_A                                  # Alvenic Mach Number
         self.M_SA       =    self.V*1e-2 / np.sqrt(self.V_A**2 + self.V_S**2)        # Magnitosonic Mach Number
 
-    def printParams(self):
+    def params(self):
 
         #useful function tht really should be built in....rounds to n sig figs
         round_to_n = lambda x, n: round(x, -int(np.floor(np.log10(np.abs(x)))) + (n - 1)) 
