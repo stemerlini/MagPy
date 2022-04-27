@@ -413,7 +413,9 @@ class Spectrum:
         ''' Downsamples an array expressed on the convolution grid to one
         expressed on the data grid.
         '''
-        return f[::self.subgrid_scale]
+        
+        f_downsample = interp1d(self.l,f)
+        return f_downsample(self.s_l)
         
     def get_probe_wavelength(self):
         ''' returns the probe wavelength. 
