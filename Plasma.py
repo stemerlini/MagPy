@@ -31,11 +31,11 @@ class Plasma:
 
         # Estimate Ionisation Charge State - Z - from Tabled Values
         Z_mod               =   IaeaTable(self.A)
-        self.Z              =   Z_mod.model(self.Te, self.ne)                          # Charge State for a given Te
+        self.Z              =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
         # Density
-        self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z            # Mass Density 
+        self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z     # Mass Density 
         # Ion density
-        self.ni             =   self.ne/self.Z                                         # Ion Density                                        [cm^-3]
+        self.ni             =   self.ne/self.Z                                  # Ion Density                                        [cm^-3]
         # Calculate Coulomb Log
         self.CoulombLog()
 
