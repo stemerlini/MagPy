@@ -31,13 +31,22 @@ class Plasma:
 
         # Estimate Ionisation Charge State - Z - from Tabled Values
         Z_mod               =   IaeaTable(self.A)
-        self.Z              =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
+
+        if np.isscalar(self.Te) == True:
+            self.Z        =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
+        else:
+            self.Z = []
+            for i in range(len(self.Te)):
+                z = Z_mod.model(self.Te[i], self.ne[i])
+                self.Z.extend(z)
+            self.Z = np.array(self.Z)
+
         # Density
         self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z     # Mass Density 
         # Ion density
         self.ni             =   self.ne/self.Z                                  # Ion Density                                        [cm^-3]
         # Calculate Coulomb Log
-        self.CoulombLog()
+        self.col_log_ei = self.CoulombLog()
 
         # Parameters
         self.speed()
@@ -53,7 +62,35 @@ class Plasma:
         method to calculate Coulomb Log
         # I need to add different cases
         """
-        self.col_log_ei = 23-np.log(self.ne**0.5*self.Z*self.Te**-1.5)                                  # see NRL formulary pg 34
+
+        m_e             =      cons.m_e                                                                 # Electron Mass          [Kg]
+        m_i             =      self.A*cons.m_u
+
+        X = self.Ti * (m_e/m_i)
+        Y = 10*self.Z**2
+
+        if np.isscalar(X) == False: 
+            log_ei     =      []
+            for i in range(len(X)):
+                if ((self.Te[i] > X[i]) and (self.Te[i] < Y[i])): 
+                    collog = 23-np.log(self.ne[i]**0.5*self.Z[i]*self.Te[i]**-1.5)  # see NRL formulary pg 34
+                    log_ei.append(collog)
+                elif (X[i] < Y[i]) and (Y[i] < self.Te[i]):
+                    collog = 24-np.log(self.ne[i]**0.5*self.Te[i]**-1)
+                    log_ei.append(collog)
+                elif (self.Te[i] < X[i]*self.Z[i]):
+                    collog = 30-np.log(self.ni[i]**0.5*self.Z[i]**2*self.Te[i]**-1.5/self.A[i])
+                    log_ei.append(collog)
+            log_ei = np.array(log_ei)
+        else:
+            if ((self.Te > X) and (self.Te < Y)): 
+                log_ei = 23-np.log(self.ne**0.5*self.Z*self.Te**-1.5)  # see NRL formulary pg 34
+            elif (X < Y) and (Y < self.Te):
+                log_ei = 24-np.log(self.ne**0.5*self.Te**-1)
+            elif (self.Te < X*self.Z):
+                log_ei = 30-np.log(self.ni**0.5*self.Z**2*self.Te**-1.5/self.A)
+       
+        return log_ei
 
     def speed(self):
         """
