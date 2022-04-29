@@ -59,8 +59,8 @@ class Plasma:
 
     def CoulombLog(self):
         """
-        method to calculate Coulomb Log
-        # I need to add different cases
+        method to calculate Coulomb Log:
+        - Formulas taken from NRL formulary pg 34
         """
 
         m_e             =      cons.m_e                                                                 # Electron Mass          [Kg]
@@ -73,7 +73,7 @@ class Plasma:
             log_ei     =      []
             for i in range(len(X)):
                 if ((self.Te[i] > X[i]) and (self.Te[i] < Y[i])): 
-                    collog = 23-np.log(self.ne[i]**0.5*self.Z[i]*self.Te[i]**-1.5)  # see NRL formulary pg 34
+                    collog = 23-np.log(self.ne[i]**0.5*self.Z[i]*self.Te[i]**-1.5)  
                     log_ei.append(collog)
                 elif (X[i] < Y[i]) and (Y[i] < self.Te[i]):
                     collog = 24-np.log(self.ne[i]**0.5*self.Te[i]**-1)
@@ -264,6 +264,12 @@ class Plasma:
         self.M_S        =    self.V*1e-2 / self.V_S                                  # Sonic Mach Number
         self.M_SA       =    self.V*1e-2 / np.sqrt(self.V_A**2 + self.V_S**2)        # Magnitosonic Mach Number
 
+    def timing(self):
+        m_e             =      cons.m_e                                                                 # Electron Mass          [Kg]
+        m_i             =      self.A*cons.m_u                                                          # Ion Mass               [Kg]
+        e               =      cons.e                                                                   # Elemental Charge       [C]
+
+        ni_ei = 1.8e-19 * (m_e * m_i) ## need finishing
     def params(self):
 
         #useful function tht really should be built in....rounds to n sig figs
