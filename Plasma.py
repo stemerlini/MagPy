@@ -56,6 +56,8 @@ class Plasma:
         self.resistivity()
         self.pressure()
         self.dimensionless()
+        self.timing()
+        self.conductivity()
 
     def CoulombLog(self):
         """
@@ -265,11 +267,46 @@ class Plasma:
         self.M_SA       =    self.V*1e-2 / np.sqrt(self.V_A**2 + self.V_S**2)        # Magnitosonic Mach Number
 
     def timing(self):
-        m_e             =      cons.m_e                                                                 # Electron Mass          [Kg]
-        m_i             =      self.A*cons.m_u                                                          # Ion Mass               [Kg]
-        e               =      cons.e                                                                   # Elemental Charge       [C]
+        m_e             =      cons.m_e * 1e3                 # Electron Mass          [g]
+        m_i             =      self.A*cons.m_u *1e3           # Ion Mass               [g]
+        e               =      cons.e                         # Elemental Charge       [C]
 
-        ni_ei = 1.8e-19 * (m_e * m_i) ## need finishing
+        # equilibration time
+        ni_ei = 1.8e-19 * (m_e * m_i)**0.5*self.Z**2*self.ne*self.col_log_ei / (m_e*self.Ti + m_i*self.Te)**1.5     # [s^-1]
+        self.tau_eq  =  1/ni_ei     # Second [s]
+        
+        #collisional time ions and electrons
+        self.tau_ei = 1/self.nu_ei
+        self.tau_ie = 1/self.nu_ie
+
+    def conductivity(self):
+        # Thermal conductivity
+        m_e             =      cons.m_e * 1e3                 # Electron Mass          [g]
+        m_i             =      self.A*cons.m_u *1e3           # Ion Mass               [g]
+        e               =      cons.e                         # Elemental Charge       [C]
+
+        def ThermalCoefficient(Z):
+            ## function retrieved from spreadsheet Thermal Conductivity 
+            par     =   3.2132*Z**0.5697
+            perp    =   4.6211*Z**-0.191
+            return par, perp
+
+        a_par, a_perp   = ThermalCoefficient(self.Z)
+        
+        self.xi_i_par        =   a_par * (self.ni * self.Ti * self.tau_ie / m_i)
+        
+        if self.B == 0:
+            self.xi_i_perp     =   np.nan
+        else:
+            self.xi_i_perp     =   a_perp * (self.ni * self.Ti / ( self.om_ci**2 * self.tau_ie * m_i))
+        
+        self.xi_e_par        =  a_par * (self.ne * self.Te * self.tau_ei / m_e)
+
+        if self.B == 0:
+            self.xi_e_perp      =    np.nan
+        else: 
+            self.xi_e_perp      =   a_perp * (self.ne * self.Te / ( self.om_ce**2 * self.tau_ei * m_e ))
+
     def params(self):
 
         #useful function tht really should be built in....rounds to n sig figs
