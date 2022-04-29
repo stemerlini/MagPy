@@ -293,19 +293,19 @@ class Plasma:
 
         a_par, a_perp   = ThermalCoefficient(self.Z)
         
-        self.xi_i_par        =   a_par * (self.ni * self.Ti * self.tau_ie / m_i)
+        self.xi_i_par        =   1.6e-12 * a_par * (self.ni * self.Ti * self.tau_ie / m_i * 1e3)
         
         if self.B == 0:
             self.xi_i_perp     =   np.nan
         else:
-            self.xi_i_perp     =   a_perp * (self.ni * self.Ti / ( self.om_ci**2 * self.tau_ie * m_i))
+            self.xi_i_perp     =   1.6e-12 * a_perp * (self.ni * self.Ti / ( self.om_ci**2 * self.tau_ie * m_i * 1e3))
         
-        self.xi_e_par        =  a_par * (self.ne * self.Te * self.tau_ei / m_e)
+        self.xi_e_par        =  1.6e-12 * a_par * (self.ne * self.Te * self.tau_ei / m_e * 1e3)
 
         if self.B == 0:
             self.xi_e_perp      =    np.nan
         else: 
-            self.xi_e_perp      =   a_perp * (self.ne * self.Te / ( self.om_ce**2 * self.tau_ei * m_e ))
+            self.xi_e_perp      =   1.6e-12 * a_perp * (self.ne * self.Te / ( self.om_ce**2 * self.tau_ei * m_e * 1e3 ))
 
     def params(self):
 
