@@ -69,7 +69,6 @@ class Image:
         else:
             return ax.imshow(self.im, extent=extent, **kwargs)
 
-        
     def plot_px(self, ax, **kwargs):
         '''Plot image with axes pixels. kwargs are passed
         to plt.imshow method.'''
