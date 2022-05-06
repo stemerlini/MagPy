@@ -6,13 +6,13 @@ import scipy.constants as cons
 from MagPy.Ionisation import IaeaTable
 
 class Plasma:
-    def __init__(self, A, ne, Te, Ti, V, B):
+    def __init__(self, A, ne, Te, Ti, V, B, Z = None):
         '''
         Initialise a Plasma Object given the following parameters:
         Args:
             example:
             ---------------------------------------------------------------------------------------
-            al_flow = {'A':27, 'ne':1e18, 'Te': Te, 'Ti': Ti, 'V':4e6, 'B': 5}
+            al_flow = {'A':27, 'ne':1e18, 'Te': Te, 'Ti': Ti, 'V':4e6, 'B': 5, 'Z': Z}
             al=Plasma(**al_flow)
             ---------------------------------------------------------------------------------------
             A:      ion mass in nucleon masses
@@ -20,6 +20,7 @@ class Plasma:
             Te      electron temperature in eV
             V:      velocity in cm/s
             B:      Magnetic Field [Tesla]
+            Z:      if not provided use z_model based on Te and Ne
 
         '''
         self.A              =   A                                           # Atomic mass weight                                [gr/mol]
@@ -28,18 +29,20 @@ class Plasma:
         self.Ti             =   Ti                                          # Ion Temperature                                   [eV]
         self.V              =   V                                           # Bulk Velocity                                     [cm/s]
         self.B              =   B                                           # Magnetic Field                                    [Tesla T]
-
-        # Estimate Ionisation Charge State - Z - from Tabled Values
-        Z_mod               =   IaeaTable(self.A)
-
-        if np.isscalar(self.Te) == True:
-            self.Z        =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
+        
+        if Z is None:
+            # Estimate Ionisation Charge State - Z - from Tabled Values
+            Z_mod               =   IaeaTable(self.A)
+            if np.isscalar(self.Te) == True:
+                self.Z        =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
+            else:
+                self.Z = []
+                for i in range(len(self.Te)):
+                    z = Z_mod.model(self.Te[i], self.ne[i])
+                    self.Z.extend(z)
+                self.Z = np.array(self.Z)
         else:
-            self.Z = []
-            for i in range(len(self.Te)):
-                z = Z_mod.model(self.Te[i], self.ne[i])
-                self.Z.extend(z)
-            self.Z = np.array(self.Z)
+            self.Z = Z
 
         # Density
         self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z     # Mass Density 
@@ -293,19 +296,29 @@ class Plasma:
 
         a_par, a_perp   = ThermalCoefficient(self.Z)
         
-        self.xi_i_par        =   1.6e-12 * a_par * (self.ni * self.Ti * self.tau_ie / m_i * 1e3)
+        self.xi_i_par        =   1.6e-12 * a_par * (self.ni * self.Ti * self.tau_ie / m_i)
+        self.Dth_i_par   =   self.xi_i_par / self.ne
         
         if self.B == 0:
             self.xi_i_perp     =   np.nan
+            self.Dth_i_perp    =   np.nan
+            
         else:
-            self.xi_i_perp     =   1.6e-12 * a_perp * (self.ni * self.Ti / ( self.om_ci**2 * self.tau_ie * m_i * 1e3))
-        
-        self.xi_e_par        =  1.6e-12 * a_par * (self.ne * self.Te * self.tau_ei / m_e * 1e3)
+            self.xi_i_perp     =   1.6e-12 * a_perp * (self.ni * self.Ti / ( self.om_ci**2 * self.tau_ie * m_i))
+            self.Dth_i_perp    =   self.xi_i_perp / self.ne
+
+        self.xi_e_par        =   1.6e-12 * a_par * (self.ne * self.Te * self.tau_ei / m_e)
+        self.Dth_e_par       =   self.xi_e_par / self.ne
+
 
         if self.B == 0:
             self.xi_e_perp      =    np.nan
+            self.Dth_e_perp     =    np.nan
+
         else: 
             self.xi_e_perp      =   1.6e-12 * a_perp * (self.ne * self.Te / ( self.om_ce**2 * self.tau_ei * m_e * 1e3 ))
+            self.Dth_e_perp    =   self.xi_e_perp / self.ne
+        
 
     def params(self):
 
