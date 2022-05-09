@@ -59,15 +59,16 @@ class Image:
         x0, y0 = self.px_to_mm([x0, y0])
         x1, y1 = self.px_to_mm([x1, y1])
         extent = [x0, x1, y1, y0]
-
+        img = self.im
+        
         if multiply_by:
             if mask:
-                self.masked_im = np.ma.masked_less_equal(self.im, mask)
+                self.masked_im = np.ma.masked_less_equal(img, mask)
                 return ax.imshow(self.masked_im*multiply_by, extent=extent, **kwargs)
             else:
-                return ax.imshow(self.im*multiply_by, extent=extent, **kwargs)
+                return ax.imshow(img*multiply_by, extent=extent, **kwargs)
         else:
-            return ax.imshow(self.im, extent=extent, **kwargs)
+            return ax.imshow(img, extent=extent, **kwargs)
 
     def plot_px(self, ax, **kwargs):
         '''Plot image with axes pixels. kwargs are passed
