@@ -6,16 +6,17 @@ import scipy.constants as cons
 from MagPy.Ionisation import IaeaTable
 
 class Plasma:
-    def __init__(self, A, ne, Te, Ti, V, B, Z = None):
+    def __init__(self, A, ANum, ne, Te, Ti, V, B, Z = None):
         '''
         Initialise a Plasma Object given the following parameters:
         Args:
             example:
             ---------------------------------------------------------------------------------------
-            al_flow = {'A':27, 'ne':1e18, 'Te': Te, 'Ti': Ti, 'V':4e6, 'B': 5, 'Z': Z}
+            al_flow = {'A':27, 'ANum': 14, 'ne':1e18, 'Te': Te, 'Ti': Ti, 'V':4e6, 'B': 5, 'Z': Z}
             al=Plasma(**al_flow)
             ---------------------------------------------------------------------------------------
             A:      ion mass in nucleon masses
+            ANum:   Atomic Number
             ne:     Electron Density in cm^-3
             Te      electron temperature in eV
             V:      velocity in cm/s
@@ -24,6 +25,7 @@ class Plasma:
 
         '''
         self.A              =   A                                           # Atomic mass weight                                [gr/mol]
+        self.ANum           =   ANum                                        # Atomic Number                                 
         self.ne             =   ne                                          # Electron Density [cm^-3]
         self.Te             =   Te                                          # Electron Temperature                               [Kg/m3]
         self.Ti             =   Ti                                          # Ion Temperature                                   [eV]
@@ -32,7 +34,7 @@ class Plasma:
         
         if Z is None:
             # Estimate Ionisation Charge State - Z - from Tabled Values
-            Z_mod               =   IaeaTable(self.A)
+            Z_mod               =   IaeaTable(self.ANum)
             if np.isscalar(self.Te) == True:
                 self.Z        =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
             else:
