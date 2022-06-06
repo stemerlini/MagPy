@@ -200,6 +200,7 @@ class Plasma:
         Using CGS Units, eV, cm, g, s
         """
         self.visc       =    2e19*(self.Ti**2.5)/(self.col_log_ei*self.A**0.5*self.Z**3*self.ne)       # [cm^2 s^-1]
+        self.Lvisc      =    self.visc/self.V               # Viscous Length Scale  [cm]
 
     def resistivity(self):
         """
