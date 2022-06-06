@@ -47,7 +47,7 @@ class Plasma:
             self.Z = Z
 
         # Density
-        self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z     # Mass Density 
+        self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z     # Mass Density   [gr/cm3]
         # Ion density
         self.ni             =   self.ne/self.Z                                  # Ion Density                                        [cm^-3]
         # Calculate Coulomb Log
@@ -200,7 +200,8 @@ class Plasma:
         Using CGS Units, eV, cm, g, s
         """
         self.visc       =    2e19*(self.Ti**2.5)/(self.col_log_ei*self.A**0.5*self.Z**3*self.ne)       # [cm^2 s^-1]
-        self.Lvisc      =    self.visc/self.V               # Viscous Length Scale  [cm]
+        # self.visc       =    5e-6 * self.A**0.5 * self.Ti**2.5 / (self.Z**4 * self.density)        # [cm^2 s^-1] Rayleigh-Taylor in finaly structured medium, Ryuton 1996
+        self.Lvisc      =    self.visc/self.V               # Viscous Length Scale  [cm] 
 
     def resistivity(self):
         """
