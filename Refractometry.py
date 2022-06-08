@@ -361,7 +361,7 @@ class Spectrum:
         mod.make_params()
         mod.set_param_hint('mean', value = approx_probe_angle)
         mod.set_param_hint('sigma', value=0.01)
-        mod.set_param_hint('amplitude', value=1)
+        mod.set_param_hint('amplitude', value=100)
         y = self.s_y / self.s_y.max()
         res=mod.fit(y, x=self.s_l, nan_policy='omit')
         return res.best_fit
