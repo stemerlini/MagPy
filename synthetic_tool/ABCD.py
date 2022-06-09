@@ -121,7 +121,7 @@ def knife_edge(axis, rays, edge = 1e-1):
     Filters rays using a knife edge.
     Default is a knife edge in y, can also do a knife edge in x.
     '''
-    if axis is 'y':
+    if axis == 'y':
         a=2
     else:
         a=0
@@ -248,4 +248,18 @@ class Faraday(Rays):
         β = β * np.pi/180
         rd3=np.matmul(polariser(β), rp3) #pass polariser rays to detector
 
+        self.rf = rd3
+
+class BurdiscopeRays(Rays):             
+    def solve(self):
+        rl1=np.matmul(distance(self.L - self.focal_plane), self.r0) #displace rays to lens. Accounts for object with depth
+        rc1=circular_aperture(self.R, rl1) # cut off
+        r2=np.matmul(sym_lens(self.L/2), rc1) #lens 1
+
+        rl2=np.matmul(distance(3*self.L/2), r2) #displace rays to lens 2.
+        rc2=circular_aperture(self.R, rl2) # cut off
+        r3=np.matmul(lens(self.L/3, self.L/2), rc2) #lens 2
+
+        rd3=np.matmul(distance(self.L), r3) #displace rays to detector
+        
         self.rf = rd3
