@@ -265,11 +265,31 @@ class BurdiscopeRays(Rays):
         self.rf = rd3
 
 class RonchiShadowgraphyRays(Rays):
-    self.a = a      # distance of the diffraction grating from the object
-    self.b = b      # distance from the diffraction grating to the first lens
+    # self.a  = a      # distance of the diffraction grating from the object
+    # self.b  = b      # distance from the diffraction grating to the first lens
+    # self.q  = q      # distance from the 
     def solve(self):
+        Lx             =   25          # x size diffraction grating
+        Ly             =   25          # y size diffraction grating
+        m              =   10          # diffraction order
+        wavelength     =   2*np.pi     # optical wavelength
+        delta          =   1e-3        # spatial period
+        rg1     =    np.matmul(distance(self.L/2 - self.focal_plane), self.r0)   # displace rays to grating g1. Accounts for object with depth
+        rr1     =    rect_aperture(Lx, Ly, rg1)                                  # cut off rectangular
+        
+        rr1[0]  =   rr1[0]                                                 # grating 1 -> rin = rout
+        rr1[2]  =   rr1[2]                                                 # grating 1 -> rin = rout
+        rr1[1]  =   rr1[1] + m * wavelength / delta
+        rr1[3]  =   rr1[3] + m * wavelength / delta
 
-        rg1=np.matmul(distance(self.a - self.focal_plane), self.r0)     #displace rays to grating g1. Accounts for object with depth
-        rc1=circular_aperture(self.R, rg1)                              # cut off
-        rl1=np.matmul(distance(self.q, self.rc1)                        #displace rays to lens from the . Accounts for object with depth
+        rl1     =   np.matmul(distance(self.L/2), rr1)                          # displace rays to the first lens from the diffraction gratings
+        rc1     =   circular_aperture(self.R, rl1)                                # cut off
+        r3      =   np.matmul(sym_lens(self.L/2), rc1)                             # lens 1
+        
+        rl2     =   np.matmul(distance(3*self.L/2), r3)                           # displace rays to lens 2.
+        rc2     =   circular_aperture(self.R, rl2)                                # cut off
+        r4      =   np.matmul(sym_lens(self.L/3), rc2)                             # lens 2
 
+        rd4     =   np.matmul(distance(self.L), r4)                               # displace rays to detector
+
+        self.rf =   rd4
