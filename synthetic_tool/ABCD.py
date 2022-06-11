@@ -265,6 +265,7 @@ class BurdiscopeRays(Rays):
         self.rf = rd3
 
 class RonchiShadowgraphyRays(Rays):
+    # [reference 1992_RayMatrixApproachDiffractiveOptics_Davis]
     # self.a  = a      # distance of the diffraction grating from the object
     # self.b  = b      # distance from the diffraction grating to the first lens
     # self.q  = q      # distance from the 
