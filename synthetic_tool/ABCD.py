@@ -263,3 +263,13 @@ class BurdiscopeRays(Rays):
         rd3=np.matmul(distance(self.L), r3) #displace rays to detector
         
         self.rf = rd3
+
+class RonchiShadowgraphyRays(Rays):
+    self.a = a      # distance of the diffraction grating from the object
+    self.b = b      # distance from the diffraction grating to the first lens
+    def solve(self):
+
+        rg1=np.matmul(distance(self.a - self.focal_plane), self.r0)     #displace rays to grating g1. Accounts for object with depth
+        rc1=circular_aperture(self.R, rg1)                              # cut off
+        rl1=np.matmul(distance(self.q, self.rc1)                        #displace rays to lens from the . Accounts for object with depth
+
