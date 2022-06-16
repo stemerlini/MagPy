@@ -180,10 +180,7 @@ class Signal:
         self.sh = sh
         self.bk = bk
 
-        # fig, axes = plt.subplots(1,2, figsize = (10,10), sharey=True)
-        # ax1, ax2 = axes
-
-        fig, axCenter = plt.subplots(figsize=(12, 12))
+        fig, axCenter = plt.subplots(figsize=(10, 6))
         fig.subplots_adjust(.05,.1,.95,.95)
 
         divider = make_axes_locatable(axCenter)
@@ -200,13 +197,10 @@ class Signal:
         xvert = range(0, len(profile_vert), 1)
         
         axhoriz.plot(xvert, profile_vert, c = 'k')
-        axhoriz.plot(xvert, response_vert, c = 'green')
+        axhoriz.plot(xvert, response_vert, c = 'green', alpha = 0.5)
 
         axhoriz.set_ylim([0,1])
         axhoriz.set_xlim([0,self.sh.shape[1]])
-        
-        # ax2.plot(profile, y_ord, c='k')
-        # ax2.plot(response, y_ord, c='green')
 
         # Sum horizontally
         profile_hor = self.sh.im.sum(1)
@@ -215,8 +209,11 @@ class Signal:
         response_hor = (response_hor - response_hor.min() ) / (response_hor.max() - response_hor.min())
         yhoriz = range(len(profile_hor), 0 , -1)
 
-        axvert.plot(profile_hor, yhoriz, c = 'k')
-        axvert.plot(response_hor, yhoriz, c = 'green')
+        axvert.plot(profile_hor, yhoriz, c = 'k', zorder = 2)
+        
+        axvert.plot(response_hor, yhoriz, c = 'green', alpha = 0.7)
+        axvert.fill_between(response_hor, yhoriz, alpha=0.7)
+
 
         axvert.set_xlim([0,1])
         axvert.set_ylim([self.sh.shape[0], 0])
@@ -239,8 +236,8 @@ class Signal:
             axhoriz.text(Y[i], 0.8, str(i), c='r')
             i += 1
         
-        x0, x1, y0, y1 = self.get_dark_bounds()
-        self.draw_rect(axCenter, y0, y1, x0, x1, c='b')
+        # x0, x1, y0, y1 = self.get_dark_bounds()
+        # self.draw_rect(axCenter, y0, y1, x0, x1, c='b')
 
         axCenter.set_ylabel(r'Spectrum [Px]')
         axCenter.set_xlabel(r'Position [Px]')
@@ -272,7 +269,7 @@ class Signal:
         
         self.segments = {}
         i = 0
-        while(i<len(y0)):
+        while(i<len(y0)-1):
             n = str(i)
             sh_im = sim[sx0:sx1, y0[i]:y1[i]]
             bk_im = bim[bx0:bx1, y0[i]:y1[i]]
