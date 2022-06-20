@@ -197,7 +197,7 @@ class Signal:
         xvert = range(0, len(profile_vert), 1)
         
         axhoriz.plot(xvert, profile_vert, c = 'k')
-        axhoriz.plot(xvert, response_vert, c = 'green', alpha = 0.5)
+        axhoriz.plot(xvert, response_vert, c = 'green', alpha = 0.4)
 
         axhoriz.set_ylim([0,1])
         axhoriz.set_xlim([0,self.sh.shape[1]])
@@ -211,8 +211,8 @@ class Signal:
 
         axvert.plot(profile_hor, yhoriz, c = 'k', zorder = 2)
         
-        axvert.plot(response_hor, yhoriz, c = 'green', alpha = 0.7)
-        axvert.fill_between(response_hor, yhoriz, alpha=0.7)
+        # axvert.plot(response_hor, yhoriz, c = 'green', alpha = 0.2)
+        # axvert.fill_between(response_hor, yhoriz, alpha=0.2)
 
 
         axvert.set_xlim([0,1])
