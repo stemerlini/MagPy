@@ -150,7 +150,7 @@ def plot_histogram(H, xedges, yedges, ax, clim=None, cmap=None):
         clim (tuple, optional): Limits for imshow Defaults to None.
         cmap (str, optional): matplotlib colourmap. Defaults to None.
     """
-    ax.imshow(H, interpolation='nearest', origin='low', clim=clim, cmap=cmap,
+    ax.imshow(H, interpolation='nearest', origin='lower', clim=clim, cmap=cmap,
             extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], aspect=1)
 
 class GridTracer:

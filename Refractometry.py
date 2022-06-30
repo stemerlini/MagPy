@@ -187,26 +187,26 @@ class Signal:
         axvert = divider.append_axes('right', size='30%', pad=0.5)
         axhoriz = divider.append_axes('top', size='20%', pad=0.25)
 
-        axCenter.imshow(self.sh.im, cmap='Greys',  vmin=vmin, vmax=vmax)   
+        axCenter.imshow(self.sh.im, cmap='Greys', extent = [0,self.sh.shape[1], self.sh.shape[0], 0], vmin=vmin, vmax=vmax)   
         
         # Sum vertically
         profile_vert = self.sh.im.sum(0)
-        profile_vert = (profile_vert - profile_vert.min() ) / (profile_vert.max() - profile_vert.min())
+        # profile_vert = (profile_vert - profile_vert.min() ) / (profile_vert.max() - profile_vert.min())
         response_vert = self.bk.im.sum(0)
-        response_vert = (response_vert - response_vert.min() ) / (response_vert.max() - response_vert.min())
+        # response_vert = (response_vert - response_vert.min() ) / (response_vert.max() - response_vert.min())
         xvert = range(0, len(profile_vert), 1)
         
         axhoriz.plot(xvert, profile_vert, c = 'k')
         axhoriz.plot(xvert, response_vert, c = 'green', alpha = 0.4)
 
-        axhoriz.set_ylim([0,1])
+        # axhoriz.set_ylim([0,1])
         axhoriz.set_xlim([0,self.sh.shape[1]])
 
         # Sum horizontally
         profile_hor = self.sh.im.sum(1)
-        profile_hor = (profile_hor - profile_hor.min() ) / (profile_hor.max() - profile_hor.min())
+        # profile_hor = (profile_hor - profile_hor.min() ) / (profile_hor.max() - profile_hor.min())
         response_hor = self.bk.im.sum(1)
-        response_hor = (response_hor - response_hor.min() ) / (response_hor.max() - response_hor.min())
+        # response_hor = (response_hor - response_hor.min() ) / (response_hor.max() - response_hor.min())
         yhoriz = range(len(profile_hor), 0 , -1)
 
         axvert.plot(profile_hor, yhoriz, c = 'k', zorder = 2)
@@ -215,7 +215,7 @@ class Signal:
         # axvert.fill_between(response_hor, yhoriz, alpha=0.2)
 
 
-        axvert.set_xlim([0,1])
+        # axvert.set_xlim([0,1])
         axvert.set_ylim([self.sh.shape[0], 0])
 
         axhoriz.margins(x=0)
@@ -232,7 +232,7 @@ class Signal:
 
         i = 0
         while(i<len(y0)):
-            self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
+            # self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
             axhoriz.text(Y[i], 0.8, str(i), c='r')
             i += 1
         
