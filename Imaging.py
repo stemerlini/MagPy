@@ -49,7 +49,7 @@ class Image:
         o_px = self.mm_to_px(o)
         return o_px
     
-    def plot_mm(self, ax, multiply_by = None, mask = None, **kwargs):
+    def plot_mm(self, ax, multiply_by = None, mask = None, extent = None, **kwargs):
         '''Plot image with axes in physical units. kwargs are passed
         to plt.imshow method.'''
         x0 = 0
@@ -58,22 +58,60 @@ class Image:
         y1 = self.im.shape[0]
         x0, y0 = self.px_to_mm([x0, y0])
         x1, y1 = self.px_to_mm([x1, y1])
-        extent = [x0, x1, y1, y0]
+        if extent:
+            self.extent = extent
+        else:
+            self.extent = [x0, x1, y1, y0]
         img = self.im
         
         if multiply_by:
             if mask:
                 self.masked_im = np.ma.masked_less_equal(img, mask)
-                return ax.imshow(self.masked_im*multiply_by, extent=extent, **kwargs)
+                return ax.imshow(self.masked_im*multiply_by, extent = self.extent, **kwargs)
             else:
-                return ax.imshow(img*multiply_by, extent=extent, **kwargs)
+                return ax.imshow(img*multiply_by, extent = self.extent, **kwargs)
         else:
-            return ax.imshow(img, extent=extent, **kwargs)
+            return ax.imshow(img, extent = self.extent, **kwargs)
+
 
     def plot_px(self, ax, **kwargs):
         '''Plot image with axes pixels. kwargs are passed
         to plt.imshow method.'''
         return ax.imshow(self.im, **kwargs)
+
+    def plot_mm_split(self, ax, channel = 'b', multiply_by = None, mask = None, extent = None, **kwargs):
+        ''' Plot image with axes in physical units and split channels. kwargs are passed
+        to plt.imshow method.'''
+
+        x0 = 0
+        x1 = self.im.shape[1]
+        y0 = 0
+        y1 = self.im.shape[0]
+        x0, y0 = self.px_to_mm([x0, y0])
+        x1, y1 = self.px_to_mm([x1, y1])
+        if extent:
+            self.extent = extent
+        else:
+            self.extent = [x0, x1, y1, y0]
+        
+        b, g, r    =    self.im[:, :, 0], self.im[:, :, 1], self.im[:, :, 2]
+
+        if channel == 'b':
+            img = b
+        elif channel == 'g':
+            img = g
+        elif channel == 'r':
+            img = r
+        
+        if multiply_by:
+            if mask:
+                self.masked_im = np.ma.masked_less_equal(img, mask)
+                return ax.imshow(self.masked_im*multiply_by, extent = self.extent, **kwargs)
+            else:
+                return ax.imshow(img*multiply_by, extent = self.extent, **kwargs)
+        else:
+            return ax.imshow(img, extent = self.extent, **kwargs)
+
         
     def profile_mm(self, src_mm, dst_mm, width_mm, **kwargs):
         src_px = np.flip( self.mm_to_px(src_mm) )

@@ -232,7 +232,7 @@ class Signal:
 
         i = 0
         while(i<len(y0)):
-            # self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
+            self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
             axhoriz.text(Y[i], 0.8, str(i), c='r')
             i += 1
         
