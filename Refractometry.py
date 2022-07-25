@@ -227,14 +227,14 @@ class Signal:
         y0 = np.array(y0)
         y1 = np.array(y1)
         Y = (y0+y1)/2
-        for y in Y:
-            axhoriz.axvline(y, 0, 1 , c='r', ls='--', lw=1)
+        # for y in Y:
+        #     axhoriz.axvline(y, 0, 1 , c='r', ls='--', lw=1)
 
-        i = 0
-        while(i<len(y0)):
-            self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
-            axhoriz.text(Y[i], 0.8, str(i), c='r')
-            i += 1
+        # i = 0
+        # while(i<len(y0)):
+        #     self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
+        #     axhoriz.text(Y[i], 0.8, str(i), c='r')
+        #     i += 1
         
         # x0, x1, y0, y1 = self.get_dark_bounds()
         # self.draw_rect(axCenter, y0, y1, x0, x1, c='b')
