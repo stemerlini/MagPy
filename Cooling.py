@@ -4,6 +4,9 @@ import pkg_resources
 
 IEAA_DATA_PATH = pkg_resources.resource_filename('MagPy.Cooling',\
  'iaea_cooling_curves/')
+
+IEAA_DATA_PATH_MOD = pkg_resources.resource_filename('MagPy.Cooling',\
+ 'iaea_cooling_curves_mod/')
  
 class IaeaTable:
     ''' Class to generate a function which radiative power loss to plasma 
@@ -68,4 +71,53 @@ class IaeaTable:
         self.Pw = np.array(Pw)
         self.ne = np.array(ne)
         self.Te = np.array(Te[0:36])
+        self.model = interp2d(self.Te, self.ne, self.Pw)
+
+class IaeaTableMod:
+    ''' Class to generate a function which relates total radiative loss to plasma 
+    density and temperature. Function interpolates over lookup tables of 
+    radiative loss which were produced using the nLTE code FLYCHK.
+    Tables generated to have a better curve resolution.
+    
+    ************************************************
+    |  Access the generated function by calling    |
+    |      self.model(Te, ne)                      |
+    |  where:                                      |
+    |      Te = electron temperature [eV]          |
+    |      ne = electron density [cm^-3]           |
+    ************************************************
+        
+    '''
+    extension='.dat'
+    def __init__(self, AtomicNumber):
+        ''' Description of arguments:
+        1) AtomicNumber - atomic number of desired element (in the range [1,79]
+            inclusive).
+        '''
+        dpath = IEAA_DATA_PATH_MOD + str(AtomicNumber) + self.extension
+        ne = []
+        Pw = []
+        Te = []
+        with open(dpath, 'r') as f:
+            lines = list(f)
+            i = 0
+            while(i<45):
+                i += 3
+                line = lines[i]
+                ne.append( float(line[8:14]) ) 
+                i += 2
+                j=0
+                Z_row = []
+                while(j < 20):
+                    line = lines[i+j]
+                    s=line.strip()
+                    TT, ZZ = s.split()
+                    Te.append( float(TT) )
+                    Z_row.append( float(ZZ) )
+                    j += 1
+                Pw.append(np.array(Z_row))
+                i += 20
+        self.Pw = np.array(Pw)
+        self.ne = np.array(ne)
+        self.Te = np.array(Te[0:20])
         self.model = interp2d(self.Te, self.ne, self.Pw)
