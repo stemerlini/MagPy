@@ -109,7 +109,7 @@ class IaeaTableMod:
                 i += 2
                 j=0
                 Z_row = []
-                while(j < 10):
+                while(j < 20):
                     line = lines[i+j]
                     s=line.strip()
                     TT, ZZ = s.split()
@@ -117,8 +117,8 @@ class IaeaTableMod:
                     Z_row.append( float(ZZ) )
                     j += 1
                 Z.append(np.array(Z_row))
-                i += 10
+                i += 20
         self.Z = np.array(Z)
         self.ne = np.array(ne)
-        self.Te = np.array(Te[0:10])
+        self.Te = np.array(Te[0:20])
         self.model = interp2d(self.Te, self.ne, self.Z)
