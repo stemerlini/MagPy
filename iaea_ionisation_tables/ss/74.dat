@@ -1,4 +1,4 @@
-Tungsten
+Tungsten - SS
 Te sampling: 2eV
 ne sampling: 10	
 # Dens: 1.e+17
@@ -23,7 +23,7 @@ ne sampling: 10
 3.5000E+01	9.3920E+00
 3.7000E+01	9.7632E+00
 3.9000E+01	1.0141E+01
-Tungsten
+Tungsten - SS
 Te sampling: 2eV
 ne sampling: 10
 # Dens: 1.e+18
@@ -48,7 +48,7 @@ ne sampling: 10
 3.5000E+01	1.0508E+01
 3.7000E+01	1.0783E+01
 3.9000E+01	1.1052E+01
-Tungsten
+Tungsten - SS
 Te sampling: 2eV
 ne sampling: 10
 # Dens: 1.e+19

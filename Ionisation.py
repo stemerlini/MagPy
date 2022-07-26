@@ -5,9 +5,6 @@ import pkg_resources
 IEAA_DATA_PATH = pkg_resources.resource_filename('MagPy.Ionisation',\
  'iaea_ionisation_tables/')
 
-IEAA_DATA_PATH_MOD = pkg_resources.resource_filename('MagPy.Ionisation',\
- 'iaea_ionisation_tables_mod/')
-
 
 class IaeaTable:
     ''' Class to generate a function which relates average ionisation to plasma 
@@ -45,7 +42,7 @@ class IaeaTable:
         1) AtomicNumber - atomic number of desired element (in the range [1,79]
             inclusive).
         '''
-        dpath = IEAA_DATA_PATH + str(AtomicNumber) + self.extension
+        dpath = IEAA_DATA_PATH + 'default/' + str(AtomicNumber) + self.extension
         ne = []
         Z = []
         Te = []
@@ -90,12 +87,17 @@ class IaeaTableMod:
         
     '''
     extension='.dat'
-    def __init__(self, AtomicNumber):
+    def __init__(self, AtomicNumber, Model):
         ''' Description of arguments:
         1) AtomicNumber - atomic number of desired element (in the range [1,79]
             inclusive).
+        2) Model - ss: non-lte steady state, lte: lte steady state. 'ss', 'lte'
         '''
-        dpath = IEAA_DATA_PATH_MOD + str(AtomicNumber) + self.extension
+
+        if Model == 'ss':
+            dpath = IEAA_DATA_PATH + 'ss/'  + str(AtomicNumber) + self.extension
+        elif Model == 'lte':
+            dpath = IEAA_DATA_PATH + 'lte/' + str(AtomicNumber) + self.extension
         ne = []
         Z = []
         Te = []
