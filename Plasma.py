@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.interpolate import CubicSpline, interp1d
 import scipy.constants as cons
-from MagPy.Ionisation import IaeaTable
+from MagPy.Ionisation import IaeaTable, IaeaTableMod
 
 class Plasma:
     def __init__(self, A, ANum, ne, Te, Ti, V, B, Z = None):
@@ -21,7 +21,7 @@ class Plasma:
             Te      electron temperature in eV
             V:      velocity in cm/s
             B:      Magnetic Field [Tesla]
-            Z:      if not provided use z_model based on Te and Ne
+            Z:      if not provided use z_model based on Te and Ne (specify 'lte' or 'ss' to use the custom tables)
 
         '''
         self.A              =   A                                           # Atomic mass weight                                [gr/mol]
@@ -43,9 +43,30 @@ class Plasma:
                     z = Z_mod.model(self.Te[i], self.ne[i])
                     self.Z.extend(z)
                 self.Z = np.array(self.Z)
+        elif Z == 'lte':
+            Z_mod               =   IaeaTableMod(self.ANum, 'lte')
+            if np.isscalar(self.Te) == True:
+                self.Z        =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
+            else:
+                self.Z = []
+                for i in range(len(self.Te)):
+                    z = Z_mod.model(self.Te[i], self.ne[i])
+                    self.Z.extend(z)
+                self.Z = np.array(self.Z)
+        elif Z == 'ss':
+            Z_mod               =   IaeaTableMod(self.ANum, 'ss')
+            if np.isscalar(self.Te) == True:
+                self.Z        =   Z_mod.model(self.Te, self.ne)                   # Charge State for a given Te
+            else:
+                self.Z = []
+                for i in range(len(self.Te)):
+                    z = Z_mod.model(self.Te[i], self.ne[i])
+                    self.Z.extend(z)
+                self.Z = np.array(self.Z)
         else:
             self.Z = Z
-
+        
+        # -----------------------------------------------------------------
         # Density
         self.density        =    self.ne * self.A * cons.m_p * 1e3 / self.Z     # Mass Density   [gr/cm3]
         # Ion density
