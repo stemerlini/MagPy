@@ -230,11 +230,11 @@ class Signal:
         # for y in Y:
         #     axhoriz.axvline(y, 0, 1 , c='r', ls='--', lw=1)
 
-        # i = 0
-        # while(i<len(y0)):
-        #     self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
-        #     axhoriz.text(Y[i], 0.8, str(i), c='r')
-        #     i += 1
+        i = 0
+        while(i<len(y0)):
+            self.draw_rect(axCenter, y0[i], y1[i], self.l0, self.l1)
+            axhoriz.text(Y[i], 0.8, str(i), c='r')
+            i += 1
         
         # x0, x1, y0, y1 = self.get_dark_bounds()
         # self.draw_rect(axCenter, y0, y1, x0, x1, c='b')
@@ -275,14 +275,14 @@ class Signal:
             bk_im = bim[bx0:bx1, y0[i]:y1[i]]
             sh_l  = np.linspace(sx0, sx1, len(sh_im[:,1]))
             bk_l  = np.linspace(bx0, bx1, len(bk_im[:,1]))
-            sh_l  = (sh_l - (sh_l.max() + sh_l.min()) / 2) / sh_refractometer.scale_phi
-            bk_l  = (bk_l - (bk_l.max() + bk_l.min()) / 2) / bk_refractometer.scale_phi
-            f     = Spectrum(sh_im, bk_im, sh_l, bk_l, n)
+            sh_l_rad  = (sh_l - (sh_l.max() + sh_l.min()) / 2) / sh_refractometer.scale_phi
+            bk_l_rad  = (bk_l - (bk_l.max() + bk_l.min()) / 2) / bk_refractometer.scale_phi
+            f     = Spectrum(sh_im, bk_im, sh_l, bk_l, sh_l_rad, bk_l_rad, n)
             self.segments[n]=f
             i += 1
 
 class Spectrum:
-    def __init__(self, sh_im, bk_im, s_l, b_l, name):
+    def __init__(self, sh_im, bk_im, s_l, b_l, s_l_rad, b_l_rad, name):
 
         ''' Initialises a fiber class. sh_im/bk_im are a (2D) slice of the 
         image from the CCD corresponding to an individual fiber. l is a (1D)
@@ -295,11 +295,13 @@ class Spectrum:
         the squared root of the intensity.
 
         '''
-        self.s_im   =   sh_im
-        self.b_im   =   bk_im
-        self.s_l    =   s_l
-        self.b_l    =   b_l
-        self.n      =   name
+        self.s_im       =   sh_im
+        self.b_im       =   bk_im
+        self.s_l        =   s_l
+        self.b_l        =   b_l
+        self.s_l_rad    =   s_l_rad
+        self.b_l_rad    =   b_l_rad
+        self.n          =   name
 
         self.s_y, self.s_yerr = self.intensity_and_std(self.s_im, 1)
         self.b_y, self.b_yerr = self.intensity_and_std(self.b_im, 1)
