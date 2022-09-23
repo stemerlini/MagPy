@@ -6,13 +6,13 @@ import scipy.constants as cons
 from MagPy.Ionisation import IaeaTable, IaeaTableMod
 
 class Plasma:
-    def __init__(self, A, ANum, ne, Te, Ti, V, B, Z = None):
+    def __init__(self, A, ANum, ne, Te, Ti, V, B, Z = None, gamma = None):
         '''
         Initialise a Plasma Object given the following parameters:
         Args:
             example:
             ---------------------------------------------------------------------------------------
-            al_flow = {'A':27, 'ANum': 14, 'ne':1e18, 'Te': Te, 'Ti': Ti, 'V':4e6, 'B': 5, 'Z': Z}
+            al_flow = {'A':27, 'ANum': 14, 'ne':1e18, 'Te': Te, 'Ti': Ti, 'V':4e6, 'B': 5, 'Z': Z, gamma: 5/3}
             al=Plasma(**al_flow)
             ---------------------------------------------------------------------------------------
             A:      ion mass in nucleon masses
@@ -22,6 +22,7 @@ class Plasma:
             V:      velocity in cm/s
             B:      Magnetic Field [Tesla]
             Z:      if not provided use z_model based on Te and Ne (specify 'lte' or 'ss' to use the custom tables)
+            gamma:  polytropic gamma value, if not specified gamma = 1
 
         '''
         self.A              =   A                                           # Atomic mass weight                                [gr/mol]
@@ -32,6 +33,11 @@ class Plasma:
         self.V              =   V                                           # Bulk Velocity                                     [cm/s]
         self.B              =   B                                           # Magnetic Field                                    [Tesla T]
         
+        if gamma is None:
+            self.gamma          =   1
+        else:
+            self.gamma          =   gamma
+
         if Z is None:
             # Estimate Ionisation Charge State - Z - from Tabled Values
             Z_mod               =   IaeaTable(self.ANum)
@@ -148,7 +154,7 @@ class Plasma:
 
         self.V_te       =    np.sqrt(kb*T_e/m_e)                                                        # Electron Thermal Speed    [m s^-1]                          
         self.V_ti       =    np.sqrt(kb*T_i/m_i)                                                        # Ion Thermal Speed         [m s^-1]    
-        self.V_S        =    np.sqrt(kb*(self.Z*T_e+T_i)/m_i)                                           # Sound Speed               [m s^-1]
+        self.V_S        =    np.sqrt(self.gamma * kb*(self.Z*T_e+T_i)/m_i)                                           # Sound Speed               [m s^-1]
         self.V_A        =    np.sqrt(self.B**2/(mu_0*n_i*m_i))                                          # Alfven Speed              [m s^-1]
 
     def frequency(self):
