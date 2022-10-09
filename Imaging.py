@@ -127,13 +127,13 @@ class Image:
     def profile_mm(self, src_mm, dst_mm, width_mm, **kwargs):
         src_px = np.flip( self.mm_to_px(src_mm) )
         dst_px = np.flip( self.mm_to_px(dst_mm) )
-        width_px = int(width_mm*self.sc)
+        width_px = int(width_mm*self.sc_x)
         p = profile_line(self.im, src_px, dst_px, linewidth=width_px, **kwargs)
         r = np.linspace(src_mm, dst_mm, len(p))
         return r, p
         
     def create_im(self, im):
-        out = Image(im, 0., self.sc)
+        out = Image(im, 0., self.sc_x)
         out.set_origin(self.o_px)
         return out
         
