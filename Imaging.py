@@ -8,11 +8,20 @@ class Image:
     '''Initialize Image class. Parameters:
     1) image - greyscale image represented as numpy array
     2) rotation - rotation to be applied to image in degrees
-    3) pxpermm - image scale in pixels per mm'''
+    3) pxpermm_x - image scale in pixels per mm of x
+    4) pxpermm_y - Image scale in pixels per mm of y (if not specified scale x == scale y)
+    '''
+    
             
-    def __init__(self, image, rotate, pxpermm):
+    def __init__(self, image, rotate, pxpermm_x, pxpermm_y = None):
         self.im = sk_t.rotate(image, rotate, resize=False)
-        self.sc = pxpermm
+        if pxpermm_y:
+            self.sc_x = pxpermm_x
+            self.sc_y = pxpermm_y
+        else:
+            self.sc_x = pxpermm_x
+            self.sc_y = pxpermm_x
+
         self.o = np.array([0., 0.])
         self.shape = image.shape
         self.r = rotate
@@ -23,7 +32,8 @@ class Image:
         p = np.array(p_px, dtype=np.float64)
         p *= np.array([1., -1.]) #Convert handedness 
         p += np.array([0., h]) #Translate origin to BL corner
-        p /= self.sc
+        p[0] = p[0]/self.sc_x
+        p[1] = p[1]/self.sc_y
         p -= self.o
         return p
     def mm_to_px(self, p_mm):
@@ -31,7 +41,8 @@ class Image:
         h = self.shape[0]
         p = np.array(p_mm)
         p += self.o
-        p *= self.sc
+        p[0] = p[0]*self.sc_x
+        p[1] = p[1]*self.sc_y        
         p *= np.array([1., -1.]) #Convert handedness 
         p += np.array([0., h]) #Translate origin to TR corner
         return np.array(p, dtype=np.int64)
