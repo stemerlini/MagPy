@@ -87,6 +87,7 @@ from scipy.integrate import odeint,solve_ivp
 from scipy.interpolate import RegularGridInterpolator
 from time import time
 import scipy.constants as sc
+from scipy import signal
 
 c = sc.c # honestly, this could be 3e8 *shrugs*
 
@@ -148,6 +149,16 @@ class ElectronCube:
             Ly (int, optional): spatial scale of sinusoidal perturbation. Defaults to 1.
         """
         self.ne = n_e0*(1.0+s1*self.XX/self.extent)*(1+s2*np.cos(2*np.pi*self.YY/Ly))
+
+    def test_exponential_square(self, n_e0 = 1e24, Ly = 1e-3, s = 2e-3):
+        """Exponentially growing square wave perturbation
+
+        Args:
+            n_e0 ([type], optional): mean electron density. Defaults to 2e23 m^-3.
+            Ly (int, optional): spatial scale of sinusoidal perturbation. Defaults to 1e-3 m.
+            s ([type], optional): scale of exponential growth. Defaults to 2e-3 m.
+        """
+        self.ne = n_e0*10**(-self.XX/s)*(1+signal.square(2*np.pi*self.YY/Ly))
         
     def test_exponential_cos(self,n_e0=1e24,Ly=1e-3, s=2e-3):
         """Exponentially growing sinusoidal perturbation

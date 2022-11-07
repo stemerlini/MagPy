@@ -333,7 +333,6 @@ class Plasma:
         if self.B == 0:
             self.xi_i_perp     =   np.nan
             self.Dth_i_perp    =   np.nan
-            
         else:
             self.xi_i_perp     =   1.6e-12 * a_perp * (self.ni * self.Ti / ( self.om_ci**2 * self.tau_ie * m_i))
             self.Dth_i_perp    =   self.xi_i_perp / self.ne

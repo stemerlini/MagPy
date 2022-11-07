@@ -121,7 +121,7 @@ def knife_edge(axis, rays):
     Filters rays using a knife edge.
     Default is a knife edge in y, can also do a knife edge in x.
     '''
-    if axis is 'y':
+    if axis == 'y':
         a=2
     else:
         a=0
@@ -279,7 +279,7 @@ class Rays:
             self.clear_rays()
 
     def plot(self, ax, clim=None, cmap=None):
-        ax.imshow(self.H, interpolation='nearest', origin='low', clim=clim, cmap=cmap,
+        ax.imshow(self.H, interpolation='nearest', origin='lower', clim=clim, cmap=cmap,
                 extent=[self.xedges[0], self.xedges[-1], self.yedges[0], self.yedges[-1]])
 
     def clear_rays(self):
