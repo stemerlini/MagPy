@@ -89,7 +89,7 @@ class Plasma:
         self.pressure()
         self.dimensionless()
         self.timing()
-        self.conductivity()
+        self.thermalconductivity()
 
     def CoulombLog(self):
         """
@@ -154,7 +154,7 @@ class Plasma:
 
         self.V_te       =    np.sqrt(kb*T_e/m_e)                                                        # Electron Thermal Speed    [m s^-1]                          
         self.V_ti       =    np.sqrt(kb*T_i/m_i)                                                        # Ion Thermal Speed         [m s^-1]    
-        self.V_S        =    np.sqrt(self.gamma * kb*(self.Z*T_e+T_i)/m_i)                                           # Sound Speed               [m s^-1]
+        self.V_S        =    np.sqrt(self.gamma * kb*(self.Z*T_e+T_i)/m_i)                              # Sound Speed               [m s^-1]
         self.V_A        =    np.sqrt(self.B**2/(mu_0*n_i*m_i))                                          # Alfven Speed              [m s^-1]
 
     def frequency(self):
@@ -172,7 +172,7 @@ class Plasma:
 
         self.om_ce      =    e*self.B/m_e                                                               # Electron Cyclotron frequency                    [rad s^-1]
         self.om_ci      =    self.Z*e*self.B/m_i                                                        # Ion Cyclotron frequency                         [rad s^-1]
-        self.om_pe      =    np.sqrt(e**2*n_e/epsilon_0*m_e)                                            # Electron Plasma Frequency                       [rad s^-1]
+        self.om_pe      =    np.sqrt(e**2*n_e/(epsilon_0*m_e))                                            # Electron Plasma Frequency                       [rad s^-1]
         self.om_pi      =    np.sqrt(self.Z**2*e**2*n_i/(epsilon_0*m_i))                                # Ion Plasma Frequency                            [rad s^-1]
 
         # Collision Rate
@@ -242,13 +242,13 @@ class Plasma:
 
         n_e             =    self.ne * 1e6                         # Electron Density      [m-3]
 
-        self.sigma      =    n_e*e**2/(m_e*self.nu_ei)             # Conductivity          [s kg^-3 m^-3 C^-3]
+        self.sigma      =    n_e*e**2/(m_e*self.nu_ei)             # Electric Conductivity          [s kg^-3 m^-3 C^-3]
         self.Dm         =    1/(self.sigma*mu_0)                   # Magnetic Diffusivity  [m^2 s^-1]
-        self.eta        =    self.Dm*mu_0                          # Resistivity           [s kg^-3 m^-3 C^-3]^-1
+        self.eta        =    self.Dm*mu_0                          # Electric Resistivity           [s kg^-3 m^-3 C^-3]^-1
 
         """ Convert to CGS units """
         self.Dm         =    self.Dm*1e4                            #  [m^2 s^-1] --> [cm^2 s^-1]
-        self.Leta       =    self.Dm/self.V                         # Electric Resistive scale   [cm]
+        self.Leta       =    self.Dm / self.V                       # Electric Resistive scale   [cm]
 
     def pressure(self):
         """ 
@@ -313,7 +313,7 @@ class Plasma:
         self.tau_ei = 1/self.nu_ei
         self.tau_ie = 1/self.nu_ie
 
-    def conductivity(self):
+    def thermalconductivity(self):
         # Thermal conductivity
         m_e             =      cons.m_e * 1e3                 # Electron Mass          [g]
         m_i             =      self.A*cons.m_u *1e3           # Ion Mass               [g]
@@ -328,7 +328,7 @@ class Plasma:
         a_par, a_perp   = ThermalCoefficient(self.Z)
         
         self.xi_i_par        =   1.6e-12 * a_par * (self.ni * self.Ti * self.tau_ie / m_i)
-        self.Dth_i_par   =   self.xi_i_par / self.ne
+        self.Dth_i_par       =   self.xi_i_par / self.ne
         
         if self.B == 0:
             self.xi_i_perp     =   np.nan
@@ -339,7 +339,6 @@ class Plasma:
 
         self.xi_e_par        =   1.6e-12 * a_par * (self.ne * self.Te * self.tau_ei / m_e)
         self.Dth_e_par       =   self.xi_e_par / self.ne
-
 
         if self.B == 0:
             self.xi_e_perp      =    np.nan

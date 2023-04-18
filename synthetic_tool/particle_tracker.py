@@ -168,7 +168,7 @@ class ElectronCube:
             Ly (int, optional): spatial scale of sinusoidal perturbation. Defaults to 1e-3 m.
             s ([type], optional): scale of exponential growth. Defaults to 2e-3 m.
         """
-        self.ne = n_e0*10**(self.XX/s)*(1+np.cos(2*np.pi*self.YY/Ly))
+        self.ne = n_e0*10**(-self.XX/s)*(1+np.cos(2*np.pi*self.YY/Ly))
         
     def external_ne(self, ne):
         """Load externally generated grid

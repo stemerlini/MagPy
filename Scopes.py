@@ -69,20 +69,20 @@ class Rogowski:
         self.calibration = calibration
     def getInductiveComponent(self, other_probe):
         t = self.channel.t - self.channel.currentStart
-        v1 = self.channel.v_filt
-        v2 = other_probe.channel.v_filt       
+        v1 = self.channel.v
+        v2 = other_probe.channel.v       
         inductive = (v1 - v2)*0.5
         return t, inductive
     def getcapacitiveComponent(self, other_probe):
         t = self.channel.t - self.channel.currentStart
-        v1 = self.channel.v_filt
-        v2 = other_probe.channel.v_filt       
+        v1 = self.channel.v
+        v2 = other_probe.channel.v       
         inductive = (v1 + v2)*0.5
         return t, inductive
     def getCurrent(self, other_probe=None, numPosts=8, backoff=10.):
         if(other_probe is None):
             t = self.channel.t - self.channel.currentStart
-            V = self.channel.v_filt
+            V = self.channel.v
         else:
             t, V = self.getInductiveComponent(other_probe)
         currentStartIndex = np.argmin( np.abs(t+backoff) )

@@ -167,7 +167,8 @@ class GridTracer:
         fig,ax=plt.subplots(3,3, figsize=(8,8), sharex=True, sharey=True)
         ax=ax.flatten()
 
-        sc=self.scale/2
+        # sc=self.scale
+        sc=self.scale/2 #Original Setting
 
         for i, a in enumerate(ax):
             r=(2*self.N+1)*i//9
