@@ -87,8 +87,9 @@ class Plasma:
         self.viscosity()
         self.resistivity()
         self.pressure()
-        self.dimensionless()
         self.timing()
+        self.dimensionless()
+        self.thermal_conductivityEH()
         self.thermalconductivity()
 
     def CoulombLog(self):
@@ -172,13 +173,13 @@ class Plasma:
 
         self.om_ce      =    e*self.B/m_e                                                               # Electron Cyclotron frequency                    [rad s^-1]
         self.om_ci      =    self.Z*e*self.B/m_i                                                        # Ion Cyclotron frequency                         [rad s^-1]
-        self.om_pe      =    np.sqrt(e**2*n_e/(epsilon_0*m_e))                                            # Electron Plasma Frequency                       [rad s^-1]
+        self.om_pe      =    np.sqrt(e**2*n_e/(epsilon_0*m_e))                                          # Electron Plasma Frequency                       [rad s^-1]
         self.om_pi      =    np.sqrt(self.Z**2*e**2*n_i/(epsilon_0*m_i))                                # Ion Plasma Frequency                            [rad s^-1]
 
         # Collision Rate
         """Using CGS Units, eV, cm, g, s"""
         self.nu_ei      =    2.91e-6*self.Z*self.ne*self.col_log_ei*self.Te**-1.5                       # Collision Frequency: Electrons - Ions           [1/s] ref. NRL FUNDAMENTAL PLASMA PARAMETERS chapter
-        self.nu_ie      =    4.80e-8*self.Z**4*self.A**-0.5*self.ni*self.col_log_ei*self.Ti**-1.5       # Collision Frequency: Ions - Electrons           [1/s]
+        self.nu_ie      =    4.80e-8*self.Z**4*self.A**-0.5*self.ni*self.col_log_ei*self.Ti**-1.5       # Collision Frequency: Ions - Electrons           [1/s] taken from near Maxwellian formulas
 
     def lengthScale(self):
         """
@@ -299,11 +300,15 @@ class Plasma:
 
         self.M_S        =    self.V*1e-2 / self.V_S                                  # Sonic Mach Number
         self.M_SA       =    self.V*1e-2 / np.sqrt(self.V_A**2 + self.V_S**2)        # Magnitosonic Mach Number
+        self.omega_t_e  =    self.om_ce / self.nu_ei                                # omega tau electron
+        self.omega_t_i  =    self.om_ci / self.nu_ie                                # omega tau ions
+
 
     def timing(self):
         m_e             =      cons.m_e * 1e3                 # Electron Mass          [g]
         m_i             =      self.A*cons.m_u *1e3           # Ion Mass               [g]
         e               =      cons.e                         # Elemental Charge       [C]
+        
 
         # equilibration time
         ni_ei = 1.8e-19 * (m_e * m_i)**0.5*self.Z**2*self.ne*self.col_log_ei / (m_e*self.Ti + m_i*self.Te)**1.5     # [s^-1]
@@ -313,11 +318,64 @@ class Plasma:
         self.tau_ei = 1/self.nu_ei
         self.tau_ie = 1/self.nu_ie
 
+    def thermal_conductivityEH(self):
+        # Thermal conductivity - Epperlein_Haines 1985 (More accurate) - only electrons
+        # Coefficients in the following table were computed assuming fully ionised plasma so (Atomic Number == Z_bar)
+        # NB In our case, it might be more appropriate to use z_bar instead of atomic number!
+        
+        def near_ANum(Anum, Anum_arr):
+            idx = np.argmin(np.abs(Anum_arr - Anum))
+            print('Calculating transport using Anum = {}'.format(Anum_arr[idx]))
+            return idx
+
+        ## Heat transport
+        Anum_arr = np.array([1,2,3,4,5,6,7,8,10,12,14,60, 100])
+        g0 = np.array([3.2, 4.93, 6.12, 7.00, 7.68,8.23, 8.69, 9.07, 9.67, 10.1, 10.5, 12.7, 13.58])
+        gp0 = np.array([6.2, 9.3, 10.2, 9.1, 8.6, 8.6, 8.8, 7.9, 7.4, 7.3, 7.1, 6.4, 6.21])
+        gp1 = np.array([4.7, 4.0, 3.7, 3.6, 3.5, 3.5, 3.5, 3.4, 3.4, 3.4, 3.4, 3.27, 3.25])
+        cp0 = np.array([1.9, 1.9, 1.7, 1.3, 1.1, 1.0, 1.0, 0.9, 0.7, 0.7, 0.7, 0.5, 0.5])
+        cp1 = np.array([2.3, 3.8, 4.8, 4.6, 4.6, 4.8, 5.2, 4.7, 4.6, 4.7, 4.6, 4.7, 4.8])
+        cp2 = np.array([5.4, 7.8, 8.9, 8.8, 8.8, 9.0, 9.2, 8.8, 8.7, 8.7, 8.7, 8.5, 8.5])
+
+        def kc_par(Anum, Anum_arr):
+            idx = near_ANum(Anum, Anum_arr)
+            return g0[idx]
+
+        def kc_perp(chi, Anum, Anum_arr):
+            idx = near_ANum(Anum, Anum_arr)
+            return (gp1[idx] * chi + gp0[idx])/(chi**3 + cp2[idx] * chi**2 + cp1[idx] * chi +cp0[idx])
+
+        """
+        This function is in MKS.
+        """
+        m_e         =    cons.m_e           # Electron Mass          [Kg]
+        e           =    cons.e             # Elemental Charge       [C]
+        kb          =    cons.k             # Boltzmann Constant     [J K^-1]
+        T_e         =    self.Te*e/kb       # Electron Temperature    [K]
+        n_e         =    self.ne * 1e6      # Electron Density       [m^-3]    
+        Anum        =    self.ANum          # Atomic mass
+        chi         =    self.omega_t_e     # omega tau electron
+
+        self.k_conv      =  kb * n_e * T_e/(m_e * self.nu_ei) # NRL p 37, 1/(m s)
+        self.kc_perp     =  kc_perp(chi, self.Z, Anum_arr)
+        self.kc_par      =  kc_par(self.Z, Anum_arr)
+        self.par_to_perp =  self.kc_par/self.kc_perp
+
+        self.k_perp      =  self.kc_perp * self.k_conv 
+        self.k_par       =  self.kc_par * self.k_conv
+        
+        self.C_p         =  5/2*(n_e * (1 + 1/self.Z))  # heat capacity of electrons and ions
+        self.Dth_perp    =  self.k_perp/self.C_p        # m^2/s
+        self.Dth_par     =  self.k_par/self.C_p         # m^2/s
+
+
+
     def thermalconductivity(self):
-        # Thermal conductivity
+        # Coefficient Braginskii
         m_e             =      cons.m_e * 1e3                 # Electron Mass          [g]
         m_i             =      self.A*cons.m_u *1e3           # Ion Mass               [g]
         e               =      cons.e                         # Elemental Charge       [C]
+    
 
         def ThermalCoefficient(Z):
             ## function retrieved from spreadsheet Thermal Conductivity 
@@ -362,12 +420,14 @@ class Plasma:
         ionmeanfreepath     =    'Ion Mean-Free-Path       =    '   +  str(np.format_float_scientific(self.mfp_i, precision = 1, exp_digits=2))      + ' [cm]'
         elemeanfreepath     =    'Electron Mean-Free-Path  =    '   +  str(np.format_float_scientific(self.mfp_e, precision = 1, exp_digits=2))      + ' [cm]'
         collog              =    'Coulomb Logaritm         =    '   +  str(np.format_float_scientific(self.col_log_ei, precision = 1, exp_digits=2))  
-
+        
         magneticdiff        =    'Magnetic Diffusivity     =    '   +  str(np.format_float_scientific(self.Dm, precision = 1, exp_digits=2))       + ' [cm^2/s]'
         resistivescale      =    'Resistive Scale          =    '   +  str(np.format_float_scientific(self.Leta, precision = 1, exp_digits=2))       + ' [cm]'
         sonicmachnumber     =    'Sonic Mach Number        =    '   +  str(np.format_float_scientific(self.M_S, precision = 1, exp_digits=2))
         magneticmachnumber  =    'Alfven Mach Number       =    '   +  str(np.format_float_scientific(self.M_A, precision = 1, exp_digits=2))
         msonicmachnumber    =    'Magnetosonic Mach Number =    '   +  str(np.format_float_scientific(self.M_SA, precision = 1, exp_digits=2))
+        omegatau_i          =    'Magnatisation Ions (omega_tau_i) = ' + str(np.format_float_scientific(self.omega_t_i, precision = 1, exp_digits=2))       
+        omegatau_e          =    'Magnatisation Electrons (omega_tau_e) = ' + str(np.format_float_scientific(self.omega_t_e, precision = 1, exp_digits=2))
 
         viscositykinem      =    'kinematic viscosity      =    '   +  str(np.format_float_scientific(self.visc, precision = 1, exp_digits=2))
         reynoldsnumber      =    'Reynolds Number          =    '   +  str(np.format_float_scientific(self.Re, precision = 1, exp_digits=2))
@@ -375,11 +435,11 @@ class Plasma:
         mabeta              =    'Thermal Beta             =    '   +  str(np.format_float_scientific(self.beta_th, precision = 1, exp_digits=2))
         rambeta             =    'Dynamic Beta             =    '   +  str(np.format_float_scientific(self.beta_ram, precision = 1, exp_digits=2))
 
-
+        
         electrontemperature =    'Electron Temperature     =    '   +  str(np.format_float_scientific(self.Te, precision = 1, exp_digits=2))        + ' [eV]'
         iontemperature      =    'Ion Temperature          =    '   +  str(np.format_float_scientific(self.Ti, precision = 1, exp_digits=2))        + ' [eV]'
         chargestate         =    'Charge State - Z         =    '   +  str(self.Z)
 
-        txtstr              =   electrondensity + '\n' + ioninertiallength + '\n' + ionlarmorradius + '\n' + ionmeanfreepath + '\n' + elemeanfreepath + '\n' + collog + '\n' + ionplasmafrequency + '\n' + resistivescale + '\n' + sonicmachnumber + '\n' +  magneticmachnumber + '\n' + msonicmachnumber + '\n' + viscositykinem + '\n' + reynoldsnumber + '\n' + mareynoldsnumber + '\n' + mabeta + '\n' + rambeta + '\n' + electrontemperature + '\n' + iontemperature + '\n' + chargestate + '\n' + magneticdiff
+        txtstr              =   electrondensity + '\n' + ioninertiallength + '\n' + ionlarmorradius + '\n' + ionmeanfreepath + '\n' + elemeanfreepath + '\n' + collog + '\n' + ionplasmafrequency + '\n' + resistivescale + '\n' + sonicmachnumber + '\n' +  magneticmachnumber + '\n' + msonicmachnumber + '\n' + viscositykinem + '\n' + omegatau_i + '\n' + omegatau_e + '\n' + reynoldsnumber + '\n' + mareynoldsnumber + '\n' + mabeta + '\n' + rambeta + '\n' + electrontemperature + '\n' + iontemperature + '\n' + chargestate + '\n' + magneticdiff
         
         print(txtstr)
