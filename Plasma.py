@@ -78,8 +78,7 @@ class Plasma:
         # Ion density
         self.ni             =   self.ne/self.Z                                  # Ion Density                                        [cm^-3]
         # Calculate Coulomb Log
-        self.col_log_ei = self.CoulombLog()
-
+        self.CoulombLog()
         # Parameters
         self.speed()
         self.frequency()
@@ -89,8 +88,8 @@ class Plasma:
         self.pressure()
         self.timing()
         self.dimensionless()
-        self.thermal_conductivityEH()
-        self.thermalconductivity()
+        # self.thermal_conductivityEH()
+        # self.thermalconductivity()
 
     def CoulombLog(self):
         """
@@ -104,7 +103,7 @@ class Plasma:
         X = self.Ti * (m_e/m_i)
         Y = 10*self.Z**2
 
-        if np.isscalar(X) == False: 
+        if np.isscalar(X) == False:
             log_ei     =      []
             for i in range(len(X)):
                 if ((self.Te[i] > X[i]) and (self.Te[i] < Y[i])): 
@@ -116,16 +115,15 @@ class Plasma:
                 elif (self.Te[i] < X[i]*self.Z[i]):
                     collog = 30-np.log(self.ni[i]**0.5*self.Z[i]**2*self.Te[i]**-1.5/self.A[i])
                     log_ei.append(collog)
-            log_ei = np.array(log_ei)
+            self.col_log_ei = np.array(log_ei)
         else:
             if ((self.Te > X) and (self.Te < Y)): 
-                log_ei = 23-np.log(self.ne**0.5*self.Z*self.Te**-1.5)  # see NRL formulary pg 34
+                self.col_log_ei = 23-np.log(self.ne**0.5*self.Z*self.Te**-1.5)  # see NRL formulary pg 34
             elif (X < Y) and (Y < self.Te):
-                log_ei = 24-np.log(self.ne**0.5*self.Te**-1)
+                self.col_log_ei = 24-np.log(self.ne**0.5*self.Te**-1)
             elif (self.Te < X*self.Z):
-                log_ei = 30-np.log(self.ni**0.5*self.Z**2*self.Te**-1.5/self.A)
-       
-        return log_ei
+                self.col_log_ei = 30-np.log(self.ni**0.5*self.Z**2*self.Te**-1.5/self.A)
+    
 
     def speed(self):
         """
@@ -178,7 +176,7 @@ class Plasma:
 
         # Collision Rate
         """Using CGS Units, eV, cm, g, s"""
-        self.nu_ei      =    2.91e-6*self.Z*self.ne*self.col_log_ei*self.Te**-1.5                       # Collision Frequency: Electrons - Ions           [1/s] ref. NRL FUNDAMENTAL PLASMA PARAMETERS chapter
+        self.nu_ei      =    2.91e-6*self.Z*self.ne*self.col_log_ei*self.Te**-1.5                       # Collision Frequency: Electrons - Ions           [1/s] ref. NRL FUNDAMENTAL PLASMA PARAMETERS chapter does not include Z - refer to Braginskii
         self.nu_ie      =    4.80e-8*self.Z**4*self.A**-0.5*self.ni*self.col_log_ei*self.Ti**-1.5       # Collision Frequency: Ions - Electrons           [1/s] taken from near Maxwellian formulas
 
     def lengthScale(self):
@@ -202,7 +200,7 @@ class Plasma:
         self.delta_i    =    c/self.om_pi                                                               # ion inertial length (ion skin depth)            [m]
         self.delta_e    =    c/self.om_pe                                                               # electron inertial length (electron skin depth)  [m]
         
-        if self.B != 0:
+        if np.nonzero(self.B):
             self.rho_i  =    self.V_ti/self.om_ci                                                       # Ion Larmor Radius                               [m]
             self.rho_e  =    self.V_te/self.om_ce                                                       # Electron Larmor Radius                          [m]
             self.rho_e  *=  1e2
@@ -289,7 +287,7 @@ class Plasma:
         self.Re         =    self.l*self.V / self.visc                               # Reynolds Number                                 
         self.Re_m       =    self.l*self.V / self.Dm                                 # Magnetic Reynolds Number        
         
-        if self.B != 0:
+        if np.nonzero(self.B):
             self.beta_th    =    self.P_th / self.P_B                                    # Thermal Beta
             self.beta_ram   =    self.P_ram / self.P_B                                   # Dynamic Beta
             self.M_A        =    self.V*1e-2 / self.V_A                                  # Alvenic Mach Number
@@ -311,8 +309,10 @@ class Plasma:
         
 
         # equilibration time
-        ni_ei = 1.8e-19 * (m_e * m_i)**0.5*self.Z**2*self.ne*self.col_log_ei / (m_e*self.Ti + m_i*self.Te)**1.5     # [s^-1]
-        self.tau_eq  =  1/ni_ei     # Second [s]
+        self.ni_ei      =  1.8e-19 * (m_e * m_i)**0.5*self.Z**2*self.ne*self.col_log_ei / (m_e*self.Ti + m_i*self.Te)**1.5     # [s^-1]
+        self.ni_ie      =  1.8e-19 * (m_i * m_e)**0.5*self.Z**2*self.ni*self.col_log_ei / (m_i*self.Te + m_e*self.Ti)**1.5     # [s^-1]
+        self.tau_eq_ei  =  1/self.ni_ei     # Second [s]
+        self.tau_eq_ie  =  1/self.ni_ie     # Second [s]
         
         #collisional time ions and electrons
         self.tau_ei = 1/self.nu_ei
@@ -325,7 +325,7 @@ class Plasma:
         
         def near_ANum(Anum, Anum_arr):
             idx = np.argmin(np.abs(Anum_arr - Anum))
-            print('Calculating transport using Anum = {}'.format(Anum_arr[idx]))
+            # print('Calculating transport using Anum = {}'.format(Anum_arr[idx]))
             return idx
 
         ## Heat transport
@@ -388,7 +388,7 @@ class Plasma:
         self.xi_i_par        =   1.6e-12 * a_par * (self.ni * self.Ti * self.tau_ie / m_i)
         self.Dth_i_par       =   self.xi_i_par / self.ne
         
-        if self.B == 0:
+        if np.nonzero(self.B) is False:
             self.xi_i_perp     =   np.nan
             self.Dth_i_perp    =   np.nan
         else:
@@ -398,7 +398,7 @@ class Plasma:
         self.xi_e_par        =   1.6e-12 * a_par * (self.ne * self.Te * self.tau_ei / m_e)
         self.Dth_e_par       =   self.xi_e_par / self.ne
 
-        if self.B == 0:
+        if np.nonzero(self.B) is False:
             self.xi_e_perp      =    np.nan
             self.Dth_e_perp     =    np.nan
 

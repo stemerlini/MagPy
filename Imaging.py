@@ -13,8 +13,12 @@ class Image:
     '''
     
             
-    def __init__(self, image, rotate, pxpermm_x, pxpermm_y = None):
+    def __init__(self, image, rotate, pxpermm_x, pxpermm_y = None, flipud = False, fliplr = False):
         self.im = sk_t.rotate(image, rotate, resize=False)
+        if flipud:
+            self.im = np.flipud(self.im)
+        if fliplr:
+            self.im = np.fliplr(self.im)
         if pxpermm_y:
             self.sc_x = pxpermm_x
             self.sc_y = pxpermm_y
@@ -25,6 +29,7 @@ class Image:
         self.o = np.array([0., 0.])
         self.shape = image.shape
         self.r = rotate
+
         
     def px_to_mm(self, p_px):
         '''Calculates position of point in mm, given position in px'''
