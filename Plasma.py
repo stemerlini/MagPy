@@ -88,7 +88,7 @@ class Plasma:
         self.pressure()
         self.timing()
         self.dimensionless()
-        # self.thermal_conductivityEH()
+        self.thermal_conductivityEH()
         # self.thermalconductivity()
 
     def CoulombLog(self):
