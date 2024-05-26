@@ -10,6 +10,7 @@ class Image:
     2) rotation - rotation to be applied to image in degrees
     3) pxpermm_x - image scale in pixels per mm of x
     4) pxpermm_y - Image scale in pixels per mm of y (if not specified scale x == scale y)
+    5) mask = list format, e.g. [0,1]
     '''
     
             
@@ -82,8 +83,12 @@ class Image:
         
         if multiply_by:
             if mask:
-                self.masked_im = np.ma.masked_less_equal(img, mask)
-                return ax.imshow(self.masked_im*multiply_by, extent = self.extent, **kwargs)
+                if len(mask) > 1:
+                    self.masked_im = np.ma.masked_outside(img, mask[0], mask[1])
+                    return ax.imshow(self.masked_im*multiply_by, extent = self.extent, **kwargs)
+                else:
+                    self.masked_im = np.ma.masked_less_equal(img, mask[0])
+                    return ax.imshow(self.masked_im*multiply_by, extent = self.extent, **kwargs)
             else:
                 return ax.imshow(img*multiply_by, extent = self.extent, **kwargs)
         else:

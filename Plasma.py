@@ -28,7 +28,7 @@ class Plasma:
         self.A              =   A                                           # Atomic mass weight                                [gr/mol]
         self.ANum           =   ANum                                        # Atomic Number                                 
         self.ne             =   ne                                          # Electron Density [cm^-3]
-        self.Te             =   Te                                          # Electron Temperature                               [Kg/m3]
+        self.Te             =   Te                                          # Electron Temperature                              
         self.Ti             =   Ti                                          # Ion Temperature                                   [eV]
         self.V              =   V                                           # Bulk Velocity                                     [cm/s]
         self.B              =   B                                           # Magnetic Field                                    [Tesla T]
@@ -209,15 +209,18 @@ class Plasma:
             self.rho_e  = np.nan
             self.rho_i  = np.nan
         
-        self.mfp_e      =    self.V_te/self.nu_ei                                                       # electron mean-free-path                         [m]
-        self.mfp_i      =    self.V_ti/self.nu_ie                                                       # Ion mean-free-path
-        
+        self.mfp_e      =    self.V_te/self.nu_ei                                                       # thermal electron mean-free-path                         [m]
+        self.mfp_i      =    self.V_ti/self.nu_ie                                                       # thermal Ion mean-free-path
+        self.mfp_ii     =    self.V * 1e-2/self.nu_ie                                                          # velocity ion-ion mean-free-path (shock thickness)
+        self.mfp_ee     =    self.V * 1e-2/self.nu_ei                                                          # velocity electron mean-free-path (shock thickness)
         """ Convert to CGS units """
         self.la_de      *=  1e2     # [m] --> [cm]
         self.delta_e    *=  1e2     # [m] --> [cm]
         self.delta_i    *=  1e2     # [m] --> [cm]
         self.mfp_i      *=  1e2     # [m] --> [cm]
         self.mfp_e      *=  1e2     # [m] --> [cm]
+        self.mfp_ii     *=  1e2     # [m] --> [cm]                                                        
+        self.mfp_ee     *=  1e2     # [m] --> [cm]
 
     def viscosity(self):
         # Viscosity
